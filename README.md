@@ -1,7 +1,7 @@
 # TDLib-delphi
 
-This Example was developed by [* Ruan Diego Lacerda Menezes *] (https://github.com/dieletro/)
-for use and consumption of the Official [* Telegram TDLib *] API (https://core.telegram.org/tdlib) for use in Delphi
+This Example was developed by [*Ruan Diego Lacerda Menezes*](https://github.com/dieletro/)
+for use and consumption of the Official [*Telegram TDLib API*](https://core.telegram.org/tdlib) for use in Delphi
 
 # Developer Support Group:
  * **[*Telegram*](https://t.me/TinjectTelegram)**
