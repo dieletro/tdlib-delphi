@@ -3,9 +3,8 @@
 This Example was developed by [* Ruan Diego Lacerda Menezes *] (https://github.com/dieletro/)
 for use and consumption of the Official [* Telegram TDLib *] API (https://core.telegram.org/tdlib) for use in Delphi
 
-# Grupos de Apoio aos desenvolvedores:
+# Developer Support Group:
  * **[*Telegram*](https://t.me/TinjectTelegram)**
- * **[*Whatsapp*](https://chat.whatsapp.com/KyepdH5XYw9KnuLlobGFAE)**
 
 ## Description
 
@@ -14,7 +13,7 @@ Client for TDLib (Telegram database library) with Delphi through the json interf
 ## Requirements
 
 * Delphi 2010 or latter
-* Files [x-superobject](https://github.com/onryldz/x-superobject)
+* [x-superobject](https://github.com/onryldz/x-superobject) Files 
 
 ## Install
 
@@ -40,7 +39,7 @@ TDLib requires other third-parties libraries: OpenSSL and ZLib. These libraries 
 Copy the following libraries in the same directory where is your application:
 
 ### Windows 64
-    tdjson.dll
+    tdjson-x64.dll
     libcrypto-1_1-x64.dll
     libssl-1_1-x64.dll
     zlib1.dll
@@ -50,7 +49,7 @@ Copy the following libraries in the same directory where is your application:
     libcrypto-1_1.dll	
     libssl-1_1.dll	
     zlib1.dll	
-    
+
 ### OSX64
 
 Deploy the library libtdjson.dylib to your device and you can set where is the library using SetTDJsonPath, example:
@@ -73,6 +72,11 @@ C:\Program Files (x86)\Embarcadero\Studio\<IDE Version>\lib\iosDevice64\debug
 
 C:\Program Files (x86)\Embarcadero\Studio\<IDE Version>\lib\iosDevice64\release
 
+* **Precompiled binaries included in the example project**
+> - [X] Windows 64.
+> - [X] Windows 32.
+> - [X] Linux64.
+
 ## Creating your Telegram Application
 In order to obtain an API id and develop your own application using the Telegram API you need to do the following:
 
@@ -88,7 +92,7 @@ For the moment each number can only have one api_id connected to it.
 
 These values must be set in Telegram.API property of Telegram component. In order to authenticate, you can authenticate as an user or as a bot, there are 2 properties which you can set to login to Telegram:
 
-PhoneNumber: if you login as an user, you must set your phone number (with international code), example: +34699123456
+PhoneNumber: if you login as an user, you must set your phone number (with international code), example: +5521997196000
 
 DatabaseDirectory: allows to specify where is the tdlib database. Leave empty and will take the default configuration.
 
@@ -96,11 +100,12 @@ DatabaseDirectory: allows to specify where is the tdlib database. Leave empty an
 
 * ApplicationVersion: application version, example: 1.0
 * DeviceModel: device model, example: desktop
-* LanguageCode: user language code, example: en.
+* LanguageCode: user language code, example: en or pt, es, ...
 * SystemVersion: verison of operating system, example: windows.
 
-## Sample Code
+![Fundo3](https://user-images.githubusercontent.com/11804577/79387409-14196880-7f42-11ea-8e7f-cb2d3270c74c.png)
 
+# Sample Code
 
 ```Pascal
 
