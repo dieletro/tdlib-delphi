@@ -108,6 +108,13 @@ type
     btnDestroyClient: TButton;
     memSend: TMemo;
     memReceiver: TMemo;
+    btnSendMessage: TButton;
+    txtChatIdToSend: TEdit;
+    Label3: TLabel;
+    Label8: TLabel;
+    txtMsgToSend: TEdit;
+    memReceivedMessages: TMemo;
+    Label9: TLabel;
     procedure btnInitClick(Sender: TObject);
     procedure btnCuscaClick(Sender: TObject);
     procedure btnCreateClick(Sender: TObject);
@@ -120,6 +127,7 @@ type
     procedure Button4Click(Sender: TObject);
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure btnDestroyClientClick(Sender: TObject);
+    procedure btnSendMessageClick(Sender: TObject);
   private
     function td_execute(JsonUTF8: String): String;
     function td_send(JsonUTF8: String): String;
@@ -201,7 +209,7 @@ end;
 
 procedure TForm1.btnCreateClick(Sender: TObject);
 begin
-  if (Pointer(FClient) = Nil) or (IntPtr(FClient) = 0) then
+  if FClient = 0 then
   Begin
     FClient := client_create;
 
@@ -227,7 +235,7 @@ end;
 function TForm1.td_receive(): String;
 var
   ReturnStr, SDebug:  String;
-  X, XParam, TLAuthState,TLEvent: ISuperObject;
+  X, XParam, TLAuthState, TLEvent, TLUpdateMessage, TLContent, TLText: ISuperObject;
   JsonAnsiStr: AnsiString;
 begin
   {$REGION 'IMPLEMENTATION'}
@@ -388,6 +396,55 @@ begin
                   'message : '+TLEvent.S['message']);
     end;
 
+
+    //Handling New incoming messages  //updateNewMessage
+    if TLEvent.S['@type'] = 'updateNewMessage' then  //updateChatLastMessage
+    Begin
+      TLUpdateMessage := TLEvent.O['message'];
+      TLContent :=  TLUpdateMessage.O['content'];
+
+      //If it's a text message
+      if TLContent.S['@type'] = 'messageText' then
+      Begin
+        TLText := TLContent.O['text'];
+        memReceivedMessages.Lines.Add('ChatID : '+TLUpdateMessage.I['chat_id'].ToString+ ' - '+
+        'From UserID : '+TLUpdateMessage.I['sender_user_id'].ToString+' : '+TLText.S['text']);
+      End;
+
+    end;
+
+//{"@type":"updateChatLastMessage",
+//"chat_id":1160743820,
+//"last_message":{
+//  "@type":"message",
+//  "id":19925041152,
+//  "sender_user_id":1042366601,
+//  "chat_id":1160743820,
+//  "is_outgoing":true,
+//  "can_be_edited":true,
+//  "can_be_forwarded":true,
+//  "can_be_deleted_only_for_self":true,
+//  "can_be_deleted_for_all_users":true,
+//  "is_channel_post":false,
+//  "contains_unread_mention":false,
+//  "date":1601847217,
+//  "edit_date":0,
+//  "reply_to_message_id":0,
+//  "ttl":0,
+//  "ttl_expires_in":0,
+//  "via_bot_user_id":0,
+//  "author_signature":"",
+//  "views":0,
+//  "media_album_id":"0",
+//  "restriction_reason":"",
+//  "content":{
+//    "@type":"messageText",
+//    "text":{
+//      "@type":"formattedText",
+//      "text":"oi",
+//      "entities":[]}}},
+//  "order":"0"}
+
     //# handle an incoming update or an answer to a previously sent request
     if TLEvent.AsJSON() <> '{}' then
       Result := 'RECEIVING : '+ TLEvent.AsJSON;
@@ -401,7 +458,7 @@ End;
 
 procedure TForm1.btnStartClick(Sender: TObject);
 begin
-  if (Pointer(FClient) = Nil) or (IntPtr(FClient) = 0) then
+  if FClient = 0 then
   Begin
     Showmessage('Create a client to start the service');
   end
@@ -432,6 +489,36 @@ begin
     is_closed := 1;
     memSend.Lines.Add('Service Paused!!!');
   end;
+end;
+
+procedure TForm1.btnSendMessageClick(Sender: TObject);
+var
+  X: ISuperObject;
+  JSonAnsiStr: AnsiString;
+begin
+  if is_closed = 1 then
+    Showmessage('No active service to send!')
+  Else
+  begin
+    //ChatID from the TInjectTelegram Group for you to use and test
+    //-1001387521713
+    X := SO;
+    X.S['@type'] := 'sendMessage';
+    X.S['chat_id'] := txtChatIdToSend.Text;
+    X.O['input_message_content'] := SO;
+    X.O['input_message_content'].S['@type'] := 'inputMessageText';
+    X.O['input_message_content'].O['text'] := SO;
+    X.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
+    X.O['input_message_content'].O['text'].S['text'] := txtMsgToSend.Text;
+
+    JSonAnsiStr := X.AsJSon;
+
+    memSend.Lines.Add('SENDING : '+X.AsJSon);
+    memSend.Lines.Add('');
+
+    td_send(JSonAnsiStr);
+  end;
+
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
@@ -533,7 +620,7 @@ end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
- if (Pointer(FClient) <> Nil) or (IntPtr(FClient) <> 0) then
+  if FClient <> 0 then
   Begin
     client_destroy(FClient);
   End;
@@ -554,7 +641,7 @@ end;
 
 procedure TForm1.btnDestroyClientClick(Sender: TObject);
 begin
-  if (Pointer(FClient) <> Nil) or (IntPtr(FClient) <> 0) then
+  if FClient <> 0 then
   Begin
     if is_Closed = 0 then
     begin
@@ -566,11 +653,13 @@ begin
     client_session.ID := 0;
     client_session.Client := 0;
     client_destroy(FClient);
+    FClient := 0;
 
     with memSend.Lines do
     Begin
       Add('Name : '+client_session.Name);
       Add('ID : '+client_session.ID.ToString);
+      Add('Client : '+client_session.Client.ToString);
       Add('*******Section Finished********');
     end;
   End

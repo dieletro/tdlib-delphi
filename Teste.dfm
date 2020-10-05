@@ -1,7 +1,7 @@
 object Form1: TForm1
   Left = 0
   Top = 0
-  Caption = 'Tests for TDLib API from Telegram'
+  Caption = 'Tests for Telegram'#39's TDLib API on Delphi'
   ClientHeight = 548
   ClientWidth = 1123
   Color = clBtnFace
@@ -28,15 +28,15 @@ object Form1: TForm1
       ExplicitLeft = 0
       ExplicitTop = 28
       object Label1: TLabel
-        Left = 42
-        Top = 38
+        Left = 58
+        Top = 30
         Width = 31
         Height = 13
         Caption = 'API ID'
       end
       object Label2: TLabel
-        Left = 26
-        Top = 65
+        Left = 42
+        Top = 57
         Width = 47
         Height = 13
         Caption = 'API HASH'
@@ -75,8 +75,8 @@ object Form1: TForm1
         ParentFont = False
       end
       object Label7: TLabel
-        Left = 3
-        Top = 92
+        Left = 19
+        Top = 84
         Width = 70
         Height = 13
         Caption = 'Phone Number'
@@ -98,9 +98,36 @@ object Form1: TForm1
         Height = 13
         Caption = 'DLL'
       end
+      object Label3: TLabel
+        Left = 12
+        Top = 111
+        Width = 77
+        Height = 13
+        Caption = 'Chat ID to Send'
+      end
+      object Label8: TLabel
+        Left = 12
+        Top = 138
+        Width = 62
+        Height = 13
+        Caption = 'Text to Send'
+      end
+      object Label9: TLabel
+        Left = 559
+        Top = 51
+        Width = 190
+        Height = 24
+        Caption = 'Received Messages...'
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -20
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+      end
       object btnCreate: TButton
         Left = 110
-        Top = 153
+        Top = 162
         Width = 75
         Height = 25
         Caption = 'Create Client'
@@ -118,7 +145,7 @@ object Form1: TForm1
       end
       object btnExecute: TButton
         Left = 191
-        Top = 153
+        Top = 162
         Width = 75
         Height = 25
         Caption = 'Execute'
@@ -136,7 +163,7 @@ object Form1: TForm1
       end
       object btnSend: TButton
         Left = 434
-        Top = 153
+        Top = 162
         Width = 75
         Height = 25
         Caption = 'Send'
@@ -145,7 +172,7 @@ object Form1: TForm1
       end
       object btnStart: TButton
         Left = 272
-        Top = 153
+        Top = 162
         Width = 75
         Height = 25
         Caption = 'Start Service'
@@ -154,7 +181,7 @@ object Form1: TForm1
       end
       object btnStop: TButton
         Left = 353
-        Top = 153
+        Top = 162
         Width = 75
         Height = 25
         Caption = 'Stop Service'
@@ -172,7 +199,7 @@ object Form1: TForm1
       end
       object Button4: TButton
         Left = 3
-        Top = 153
+        Top = 162
         Width = 101
         Height = 25
         Caption = 'log verbosity'
@@ -180,8 +207,8 @@ object Form1: TForm1
         OnClick = Button4Click
       end
       object txtAPI_HASH: TEdit
-        Left = 79
-        Top = 62
+        Left = 95
+        Top = 54
         Width = 297
         Height = 21
         PasswordChar = #248
@@ -189,8 +216,8 @@ object Form1: TForm1
         TextHint = 'API_HASH'
       end
       object txtAPI_ID: TEdit
-        Left = 79
-        Top = 35
+        Left = 95
+        Top = 27
         Width = 297
         Height = 21
         PasswordChar = #248
@@ -198,8 +225,8 @@ object Form1: TForm1
         TextHint = 'API_ID'
       end
       object txtPhoneNumber: TEdit
-        Left = 79
-        Top = 89
+        Left = 95
+        Top = 81
         Width = 297
         Height = 21
         TabOrder = 11
@@ -207,7 +234,7 @@ object Form1: TForm1
       end
       object btnDestroyClient: TButton
         Left = 110
-        Top = 184
+        Top = 193
         Width = 75
         Height = 25
         Caption = 'Destroy Client'
@@ -219,6 +246,7 @@ object Form1: TForm1
         Top = 237
         Width = 550
         Height = 268
+        ScrollBars = ssVertical
         TabOrder = 13
       end
       object memReceiver: TMemo
@@ -226,7 +254,52 @@ object Form1: TForm1
         Top = 237
         Width = 550
         Height = 268
+        ScrollBars = ssBoth
         TabOrder = 14
+      end
+      object btnSendMessage: TButton
+        Left = 398
+        Top = 133
+        Width = 75
+        Height = 25
+        Caption = 'SendMessage'
+        TabOrder = 15
+        OnClick = btnSendMessageClick
+      end
+      object txtChatIdToSend: TEdit
+        Left = 95
+        Top = 108
+        Width = 297
+        Height = 21
+        TabOrder = 16
+        Text = '-1001387521713'
+        TextHint = 'Chat Id to send'
+      end
+      object txtMsgToSend: TEdit
+        Left = 95
+        Top = 135
+        Width = 297
+        Height = 21
+        TabOrder = 17
+        Text = 'Hello, this is a sample message from tdlib with Delphi!!!'
+        TextHint = 'Text to send'
+      end
+      object memReceivedMessages: TMemo
+        Left = 562
+        Top = 81
+        Width = 550
+        Height = 120
+        Lines.Strings = (
+          
+            'You can obtain a ChatID for testing using our Group that is alre' +
+            'ady filled out or send a message, after '
+          
+            'Starting the Service, using your smartphone to the contact you w' +
+            'ish to use as a test, which will appear in '
+          'this memo the ChatID and UserID')
+        ScrollBars = ssVertical
+        TabOrder = 18
+        WantTabs = True
       end
     end
   end
