@@ -283,6 +283,7 @@ type
     property DataType: TDataType read GetDataType;
     property Name: String read GetName;
     function ToString(const Ident: Boolean = False; const UniversalTime: Boolean = False): String;
+    function ToAnsiString(const Ident: Boolean = False; const UniversalTime: Boolean = False): Ansistring;
   end;
 
   TCast = class(TInterfacedObject, ICast)
@@ -327,6 +328,7 @@ type
     property DataType: TDataType read GetDataType;
     property Name: String read GetName;
     function ToString(const Ident: Boolean = False; const UniversalTime: Boolean = False): String; reintroduce;
+    function ToAnsiString(const Ident: Boolean = False; const UniversalTime: Boolean = False): Ansistring;
   end;
 
 
@@ -3000,6 +3002,11 @@ begin
      dtTime:
         AsTime := Value;
    end;
+end;
+
+function TCast.ToAnsiString(const Ident, UniversalTime: Boolean): Ansistring;
+begin
+  Result := Self.ToString(ident,UniversalTime);
 end;
 
 function TCast.ToString(const Ident, UniversalTime: Boolean): String;

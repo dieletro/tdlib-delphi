@@ -19,11 +19,11 @@ uses
   Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.ComCtrls,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
-  Data.DB, Vcl.OleServer, Vcl.ExtCtrls,
+  Data.DB, Vcl.OleServer, Vcl.ExtCtrls, ShellAPI, Math,
 
   //Use JSON with X-SuperObject
   XSuperJSON,
-  XSuperObject;
+  XSuperObject, dxGDIPlusClasses, Iglatec.LabelLink, Vcl.WinXCtrls, ChatControl;
 
 type
   MyPCharType = PAnsiChar;
@@ -63,6 +63,12 @@ var
   //Control Session...
   client_session : TtgSession;
 
+  //Used to group contacts and groups
+  ContactListTreeNode, GroupListTreeNode: TTreeNode;
+
+  //Stores the logged user data
+  CurrentChatStr: String = '';
+  TLOGetMe, TLOMe  : ISuperObject;
 type
 
   //internal delegate void Callback(IntPtr ptr);
@@ -113,8 +119,49 @@ type
     Label3: TLabel;
     Label8: TLabel;
     txtMsgToSend: TEdit;
-    memReceivedMessages: TMemo;
+    Button1: TButton;
+    btnCreatePrivateChat: TButton;
+    Button5: TButton;
+    Button2: TButton;
+    TabSheet2: TTabSheet;
+    Label10: TLabel;
+    Button6: TButton;
+    ViewCtt: TTreeView;
+    txtNameToSearch: TEdit;
+    Label12: TLabel;
+    Image1: TImage;
+    igLabelLink1: TigLabelLink;
+    igLabelLink2: TigLabelLink;
+    igLabelLink3: TigLabelLink;
+    SearchBox1: TSearchBox;
+    Button9: TButton;
+    btnsearchChatMessages: TButton;
+    txtMSG: TEdit;
+    Button7: TButton;
+    Button8: TButton;
+    Button10: TButton;
+    Button11: TButton;
+    memChatMSG: TInjectChatControl;
+    Button12: TButton;
+    lblCurrentChat: TLabel;
+    GroupBox1: TGroupBox;
+    Button13: TButton;
+    Button14: TButton;
+    Button15: TButton;
+    Button16: TButton;
+    Button17: TButton;
+    Button18: TButton;
+    Button19: TButton;
+    Button20: TButton;
+    txtProxyID: TEdit;
     Label9: TLabel;
+    txtServer: TEdit;
+    Label11: TLabel;
+    txtPort: TEdit;
+    Label13: TLabel;
+    cbType: TComboBox;
+    Label14: TLabel;
+    chbEnable: TCheckBox;
     procedure btnInitClick(Sender: TObject);
     procedure btnCuscaClick(Sender: TObject);
     procedure btnCreateClick(Sender: TObject);
@@ -128,6 +175,30 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure btnDestroyClientClick(Sender: TObject);
     procedure btnSendMessageClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure btnCreatePrivateChatClick(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
+    procedure Button9Click(Sender: TObject);
+    procedure ViewCttDblClick(Sender: TObject);
+    procedure SearchBox1InvokeSearch(Sender: TObject);
+    procedure btnsearchChatMessagesClick(Sender: TObject);
+    procedure ViewCttChange(Sender: TObject; Node: TTreeNode);
+    procedure Button7Click(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
+    procedure Button10Click(Sender: TObject);
+    procedure txtMSGKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure Button11Click(Sender: TObject);
+    procedure Button12Click(Sender: TObject);
+    procedure Button13Click(Sender: TObject);
+    procedure Button14Click(Sender: TObject);
+    procedure Button15Click(Sender: TObject);
+    procedure Button16Click(Sender: TObject);
+    procedure Button17Click(Sender: TObject);
+    procedure Button18Click(Sender: TObject);
+    procedure Button19Click(Sender: TObject);
+    procedure Button20Click(Sender: TObject);
   private
     function td_execute(JsonUTF8: String): String;
     function td_send(JsonUTF8: String): String;
@@ -234,88 +305,100 @@ end;
 
 function TForm1.td_receive(): String;
 var
-  ReturnStr, SDebug:  String;
-  X, XParam, TLAuthState, TLEvent, TLUpdateMessage, TLContent, TLText: ISuperObject;
+  ReturnStr :  String;
   JsonAnsiStr: AnsiString;
+  I: Integer;
+  J, CTInt: Integer;
+
+  XO, XOParam, TLOAuthState,
+  TLOEvent, TLOUpdateMessage,
+  TLOContent, TLOText, TLOChat,
+  TLOUsers, TLOUser : ISuperObject;
+
+  TLAContacts, TLAMessages: ISuperArray;
+  ContactTreeNode, GroupTreeNode : TTreeNode;
+
 begin
+
   {$REGION 'IMPLEMENTATION'}
   ReturnStr := client_receive(FClient, WAIT_TIMEOUT);
 
-  TLEvent := SO(ReturnStr);
+  TLOEvent := SO(ReturnStr);
 
-  if TLEvent <> NIl then
+  if TLOEvent <> NIl then
   Begin
-    {$IFDEF DEBUG}
-      SDebug := TLEvent.AsJSON;
-    {$ENDIF}
 
+    {$REGION 'Authorization'}
     //# process authorization states
-    if TLEvent.S['@type'] = 'updateAuthorizationState' then
+    if TLOEvent.S['@type'] = 'updateAuthorizationState' then
     Begin
-      TLAuthState := TLEvent.O['authorization_state'];
+      CTInt := 0; //Test....
+      TLOAuthState := TLOEvent.O['authorization_state'];
 
       //# if client is closed, we need to destroy it and create new client
-      if TLAuthState.S['@type'] = 'authorizationStateClosed' then
+      if TLOAuthState.S['@type'] = 'authorizationStateClosed' then
+      Begin
+        is_closed := 1; //Stop Service
         Exit;
-    //    break;
+      End;
 
     //  # set TDLib parameters
     //  # you MUST obtain your own api_id and api_hash at https://my.telegram.org
     //  # and use them in the setTdlibParameters call
-      if TLAuthState.S['@type'] = 'authorizationStateWaitTdlibParameters' then
+      if TLOAuthState.S['@type'] = 'authorizationStateWaitTdlibParameters' then
       Begin
-        X := nil;
-        X := SO;
-        X.S['@type'] := 'setTdlibParameters';
-        X.O['parameters'] := SO;
-        XParam := X.O['parameters'];
-          XParam.B['use_test_dc'] := False;
-          XParam.S['database_directory'] := 'tdlib';
-          XParam.S['files_directory'] := 'myfiles';
-          XParam.B['use_file_database'] := True;
-          XParam.B['use_chat_info_database'] := True;
-          XParam.B['use_message_database'] := True;
-          XParam.B['use_secret_chats'] := true;
+        XO := nil;
+        XO := SO;
+        XO.S['@type'] := 'setTdlibParameters';
+        XO.O['parameters'] := SO;
+        XOParam := XO.O['parameters'];
+          XOParam.B['use_test_dc'] := False;
+          XOParam.S['database_directory'] := 'tdlib';
+          XOParam.S['files_directory'] := 'myfiles';
+          XOParam.B['use_file_database'] := True;
+          XOParam.B['use_chat_info_database'] := True;
+          XOParam.B['use_message_database'] := True;
+          XOParam.B['use_secret_chats'] := true;
 
           JsonAnsiStr := '';
           JsonAnsiStr := txtAPI_ID.Text;
-          XParam.I['api_id'] := StrToInt(JsonAnsiStr);
+          XOParam.I['api_id'] := StrToInt(JsonAnsiStr);
 
           JsonAnsiStr := '';
           JsonAnsiStr := txtAPI_HASH.Text;
-          XParam.S['api_hash'] := JsonAnsiStr;
+          XOParam.S['api_hash'] := JsonAnsiStr;
 
-          XParam.S['system_language_code'] := 'pt';
-          XParam.S['device_model'] := 'TInjectTDLibTelegram';
+          XOParam.S['system_language_code'] := 'pt';
+          XOParam.S['device_model'] := 'TInjectTDLibTelegram';
           {$IFDEF WIN32}
-            XParam.S['system_version'] := 'WIN32';
+            XOParam.S['system_version'] := 'WIN32';
           {$ENDIF}
           {$IFDEF WIN64}
-            XParam.S['system_version'] := 'WIN64';
+            XOParam.S['system_version'] := 'WIN64';
           {$ENDIF}
-          XParam.S['application_version'] := '1.0';
-          XParam.B['enable_storage_optimizer'] := True;
-          XParam.B['ignore_file_names'] := False;
+          XOParam.S['application_version'] := '1.0';
+          XOParam.B['enable_storage_optimizer'] := True;
+          XOParam.B['ignore_file_names'] := False;
 
           //Send Request
-          ReturnStr := td_send(X.AsJSON);
+          ReturnStr := td_send(XO.AsJSON);
       End;
 
       //# set an encryption key for database to let know TDLib how to open the database
-      if TLAuthState.S['@type'] = 'authorizationStateWaitEncryptionKey' then
+      if TLOAuthState.S['@type'] = 'authorizationStateWaitEncryptionKey' then
       Begin
 
-        X := nil;
-        X := SO;
-        X.S['@type'] := 'checkDatabaseEncryptionKey';
-        X.S['encryption_key'] := '';
+        XO := nil;
+        XO := SO;
+        XO.S['@type'] := 'checkDatabaseEncryptionKey';
+        XO.S['encryption_key'] := '';
 
         //Send Request
-        ReturnStr := td_send(X.AsJSON);
+        ReturnStr := td_send(XO.AsJSON);
       End;
 
       //# enter phone number to log in
-      if TLAuthState.S['@type'] = 'authorizationStateWaitPhoneNumber' then
+      if TLOAuthState.S['@type'] = 'authorizationStateWaitPhoneNumber' then
       Begin
         //Clear Variable
         JsonAnsiStr:='';
@@ -323,17 +406,17 @@ begin
         //Convert String to AnsiString Type
         JsonAnsiStr := txtPhoneNumber.Text;
 
-        X := nil;
-        X := SO;
-        X.S['@type'] := 'setAuthenticationPhoneNumber';
-        X.S['phone_number'] := JsonAnsiStr;
+        XO := nil;
+        XO := SO;
+        XO.S['@type'] := 'setAuthenticationPhoneNumber';
+        XO.S['phone_number'] := JsonAnsiStr;
 
         //Send Request
-        ReturnStr := td_send(X.AsJSON);
+        ReturnStr := td_send(XO.AsJSON);
       End;
 
       //# wait for authorization code
-      if TLAuthState.S['@type'] = 'authorizationStateWaitCode' then
+      if TLOAuthState.S['@type'] = 'authorizationStateWaitCode' then
       Begin
         //Clear Variable
         JsonAnsiStr:='';
@@ -341,30 +424,30 @@ begin
         //Convert String to AnsiString Type
         JsonAnsiStr := InputBox('User Authorization', 'Enter the authorization code', '');
 
-        X := nil;
-        X := SO;
-        X.S['@type'] := 'checkAuthenticationCode';
-        X.S['code'] := JsonAnsiStr;
+        XO := nil;
+        XO := SO;
+        XO.S['@type'] := 'checkAuthenticationCode';
+        XO.S['code'] := JsonAnsiStr;
 
         //Send Request
-        ReturnStr := td_send(X.AsJSON);
+        ReturnStr := td_send(XO.AsJSON);
       End;
 
       //# wait for first and last name for new users
-      if TLAuthState.S['@type'] = 'authorizationStateWaitRegistration' then
+      if TLOAuthState.S['@type'] = 'authorizationStateWaitRegistration' then
       Begin
-        X := nil;
-        X := SO;
-        X.S['@type'] := 'registerUser';
-        X.S['first_name'] := 'Ruan Diego';
-        X.S['last_name'] := 'Lacerda Menezes';
+        XO := nil;
+        XO := SO;
+        XO.S['@type'] := 'registerUser';
+        XO.S['first_name'] := 'Ruan Diego';
+        XO.S['last_name'] := 'Lacerda Menezes';
 
         //send request
-        ReturnStr := td_send(X.AsJSON);
+        ReturnStr := td_send(XO.AsJSON);
       End;
 
       //# wait for password if present
-      if TLAuthState.S['@type'] = 'authorizationStateWaitPassword' then
+      if TLOAuthState.S['@type'] = 'authorizationStateWaitPassword' then
       Begin
         //Clear Variable
         JsonAnsiStr := '';
@@ -372,87 +455,205 @@ begin
         //Convert String to AnsiString Type
         JsonAnsiStr := InputBox('User Authentication ',' Enter the access code', '');
 
-        X := nil;
-        X := SO;
-        X.S['@type'] := 'checkAuthenticationPassword';
-        X.S['password'] := JsonAnsiStr;
+        XO := nil;
+        XO := SO;
+        XO.S['@type'] := 'checkAuthenticationPassword';
+        XO.S['password'] := JsonAnsiStr;
 
         //Send Request
-        ReturnStr := td_send(X.AsJSON);
+        ReturnStr := td_send(XO.AsJSON);
       End;
 
     End;
+    {$ENDREGION 'Authorization'}
 
-    if TLEvent.S['@type'] = 'error' then
+    {$REGION 'error'}
+    if TLOEvent.S['@type'] = 'error' then
     Begin
       //if an error is found, stop the process
-      if is_Closed = 0 then
-         is_Closed := 1
-      else
-          is_Closed := 0;
+      if is_Closed = 0 then  //Restart Service
+      Begin
+         is_Closed := 1;
+         is_Closed := 0;
+      End;
 
       Showmessage('An error was found:'+ #10#13 +
-                  'code : ' + TLEvent.S['code'] + #10#13 +
-                  'message : '+TLEvent.S['message']);
+                  'code : ' + TLOEvent.S['code'] + #10#13 +
+                  'message : '+TLOEvent.S['message']);
     end;
+    {$ENDREGION 'error'}
+
+    {$REGION 'getMe'}
+    if TLOAuthState <> Nil then
+      if TLOAuthState.S['@type'] = 'authorizationStateReady' then
+      Begin
+        //{"@type":"user","id":1042366601,"first_name":"Ruan Diego","last_name":"Lacerda
+        if TLOGetMe = Nil then
+        Begin
+          TLOGetMe := SO;
+          TLOGetMe.S['@type'] := 'getMe';
+          memSend.Lines.Add(td_send(TLOGetMe.Cast.ToAnsiString));
+          memReceiver.Lines.Add(TLOGetMe.Cast.ToAnsiString);
+        End;
+      End;
 
 
-    //Handling New incoming messages  //updateNewMessage
-    if TLEvent.S['@type'] = 'updateNewMessage' then  //updateChatLastMessage
+    if TLOEvent.S['@type'] = 'user' then  //updateUser
     Begin
-      TLUpdateMessage := TLEvent.O['message'];
-      TLContent :=  TLUpdateMessage.O['content'];
+      TLOMe := TLOEvent.AsObject;
+    End;
+
+    {$ENDREGION 'getMe'}
+
+    {$REGION 'getContacts FULL'}
+    //  getContacts - Ok
+    if TLOEvent.S['@type'] = 'updateUser' then  //updateUser
+    Begin
+      TLOUsers := Nil;
+      TLOUsers := TLOEvent.O['user'];
+      if TLOUsers.S['@type'] = 'user' then
+      Begin
+        with ViewCtt.Items do
+        begin
+          if TLOUsers.S['first_name'] <> '' then
+          begin
+            { Add the root node }
+            ContactTreeNode := AddChild(ContactListTreeNode,  TLOUsers.S['first_name']+' '+TLOUsers.S['last_name']);
+
+            { Add child nodes }
+            if TLOUsers.S['username'] <> '' then
+              AddChild(ContactTreeNode,'UserName : '+TLOUsers.S['username']);
+            if TLOUsers.S['phone_number'] <> '' then
+              AddChild(ContactTreeNode,'Phone : '+TLOUsers.S['phone_number']);
+            if TLOUsers.I['id'].ToString <> '' then
+              AddChild(ContactTreeNode, 'ID : '+TLOUsers.I['id'].ToString);
+          end
+          else
+            if TLOUsers.S['username'] <> '' then
+            Begin
+              { Add the root node }
+              ContactTreeNode := AddChild(ContactListTreeNode, 'UserName : '+TLOUsers.S['username']);
+
+              { Add child nodes }
+              if TLOUsers.S['phone_number'] <> '' then
+                AddChild(ContactTreeNode,'Phone : '+TLOUsers.S['phone_number']);
+              if TLOUsers.I['id'].ToString <> '' then
+                AddChild(ContactTreeNode, 'ID : '+TLOUsers.I['id'].ToString);
+            End
+            else
+              if TLOUsers.I['id'].ToString <> '' then
+              Begin
+                { Add the root node }
+                ContactTreeNode := AddChild(ContactListTreeNode, 'ID : '+TLOUsers.I['id'].ToString);
+
+                { Add child nodes }
+                if TLOUsers.S['phone_number'] <> '' then
+                  AddChild(ContactTreeNode,'Phone : '+TLOUsers.S['phone_number']);
+              End;
+
+        end;
+      End;
+    End;
+    {$ENDREGION 'getContacts'}
+
+    {$REGION 'searchPublicChat'}
+    //Return of searchPublicChat - OK....
+    if TLOEvent.S['@type'] = 'chat' then
+    Begin
+      TLOChat := Nil;
+      TLOChat := TLOEvent.AsObject;
+      with ViewCtt.Items do
+      begin
+        if TLOChat.S['title'] <> '' then
+        Begin
+          { Add the root node in group type }
+          GroupTreeNode := AddChild(GroupListTreeNode,  TLOChat.S['title']);
+
+          { Add child nodes in root node}
+          if TLOChat.I['id'].ToString <> '' then
+          AddChild(GroupTreeNode,'ID : '+TLOChat.I['id'].ToString);
+        End
+        Else
+          if TLOChat.I['id'].ToString <> '' then
+          Begin
+            { Add the root node }
+            GroupTreeNode := AddChild(GroupListTreeNode, TLOChat.I['id'].ToString);
+            { Add child nodes }
+            AddChild(GroupTreeNode,'ID : '+TLOChat.I['id'].ToString);
+          End;
+      End;
+    End;
+    {$ENDREGION 'searchPublicChat'}
+
+    {$REGION 'updateNewMessage'}
+    //Handling New incoming messages  //updateNewMessage - OK
+    if TLOEvent.S['@type'] = 'updateNewMessage' then
+    Begin
+//      TLOUpdateMessage := Nil;
+//      TLOContent :=  Nil;
+      TLOUpdateMessage := TLOEvent.O['message'];
+      TLOContent :=  TLOUpdateMessage.O['content'];
 
       //If it's a text message
-      if TLContent.S['@type'] = 'messageText' then
+      if TLOContent.S['@type'] = 'messageText' then
       Begin
-        TLText := TLContent.O['text'];
-        memReceivedMessages.Lines.Add('ChatID : '+TLUpdateMessage.I['chat_id'].ToString+ ' - '+
-        'From UserID : '+TLUpdateMessage.I['sender_user_id'].ToString+' : '+TLText.S['text']);
+        TLOText := TLOContent.O['text'];
+        if CurrentChatStr = TLOUpdateMessage.I['chat_id'].ToString then
+        Begin
+          if TLOMe.I['id'].ToString = TLOUpdateMessage.I['sender_user_id'].ToString then
+            memChatMSG.Say(User2, TLOUpdateMessage.I['sender_user_id'].ToString, TLOText.S['text'])
+          else
+            memChatMSG.Say(User1, TLOUpdateMessage.I['sender_user_id'].ToString, TLOText.S['text']);
+        End;
       End;
 
     end;
+    {$ENDREGION 'updateNewMessage'}
 
-//{"@type":"updateChatLastMessage",
-//"chat_id":1160743820,
-//"last_message":{
-//  "@type":"message",
-//  "id":19925041152,
-//  "sender_user_id":1042366601,
-//  "chat_id":1160743820,
-//  "is_outgoing":true,
-//  "can_be_edited":true,
-//  "can_be_forwarded":true,
-//  "can_be_deleted_only_for_self":true,
-//  "can_be_deleted_for_all_users":true,
-//  "is_channel_post":false,
-//  "contains_unread_mention":false,
-//  "date":1601847217,
-//  "edit_date":0,
-//  "reply_to_message_id":0,
-//  "ttl":0,
-//  "ttl_expires_in":0,
-//  "via_bot_user_id":0,
-//  "author_signature":"",
-//  "views":0,
-//  "media_album_id":"0",
-//  "restriction_reason":"",
-//  "content":{
-//    "@type":"messageText",
-//    "text":{
-//      "@type":"formattedText",
-//      "text":"oi",
-//      "entities":[]}}},
-//  "order":"0"}
+    {$REGION 'searchChatMessage'}
+    if TLOEvent.S['@type'] = 'messages' then  //updateUser
+    Begin
+//      TLAMessages := Nil;
+//      TLOContent  := Nil;
+//      TLOText := Nil;
+      for I := TLOEvent.I['total_count'] - 1 Downto 0 do
+      Begin
+        TLAMessages := TLOEvent.A['messages'];
+        TLOContent := TLAMessages.O[I];
+        TLOText := TLOContent.O['content'].O['text'];
+
+        if TLOText.S['text'] <> '' then
+        Begin
+          if CurrentChatStr = TLOContent.I['chat_id'].ToString then
+          Begin
+            if TLOMe.I['id'].ToString = TLOContent.I['sender_user_id'].ToString then
+              memChatMSG.Say(User2, TLOContent.I['sender_user_id'].ToString, TLOText.S['text'])
+            else
+              memChatMSG.Say(User1, TLOContent.I['sender_user_id'].ToString, TLOText.S['text']);
+          End;
+        End;
+      End;
+
+
+    End;
+    {$ENDREGION 'searchChatMessage'}
 
     //# handle an incoming update or an answer to a previously sent request
-    if TLEvent.AsJSON() <> '{}' then
-      Result := 'RECEIVING : '+ TLEvent.AsJSON;
+    if TLOEvent.AsJSON() <> '{}' then
+      Result := 'RECEIVING : '+ TLOEvent.AsJSON;
 
-  End
-  Else
-  //# destroy client when it is closed and isn't needed anymore
-  Client_destroy(FClient);
+  End;
+
+  XO := NIl;
+  XOParam := NIl;
+  TLOAuthState := NIl;
+  TLOEvent := NIl;
+  TLOUpdateMessage := NIl;
+  TLOContent := NIl;
+  TLOText := NIl;
+  TLOUsers := NIl;
+  TLAContacts := NIl;
+  ContactTreeNode := NIl;
   {$ENDREGION 'IMPLEMENTATION'}
 End;
 
@@ -463,21 +664,27 @@ begin
     Showmessage('Create a client to start the service');
   end
   Else
-  Begin
-    is_closed := 0;
+    Begin
+      if is_closed = 0 then
+        Showmessage('The service is active!')
+      Else
+        begin
 
-    TThread.CreateAnonymousThread(
-    procedure
-    begin
-      while is_closed = 0 do
-      Begin
-        memReceiver.Lines.Add(td_receive);
-      End
-    end).Start;
+          is_closed := 0; //Start Service
 
-    memSend.Lines.Add('Service Started!!!');
-  end;
+          TThread.CreateAnonymousThread(
+          procedure
+          begin
+            while is_closed = 0 do
+            Begin
+              memReceiver.Lines.Add(td_receive);
+            End
+          end).Start;
 
+          memSend.Lines.Add('Service Started!!!');
+
+        end;
+    end;
 end;
 
 procedure TForm1.btnStopClick(Sender: TObject);
@@ -493,8 +700,7 @@ end;
 
 procedure TForm1.btnSendMessageClick(Sender: TObject);
 var
-  X: ISuperObject;
-  JSonAnsiStr: AnsiString;
+  XO: ISuperObject;
 begin
   if is_closed = 1 then
     Showmessage('No active service to send!')
@@ -502,21 +708,355 @@ begin
   begin
     //ChatID from the TInjectTelegram Group for you to use and test
     //-1001387521713
-    X := SO;
-    X.S['@type'] := 'sendMessage';
-    X.S['chat_id'] := txtChatIdToSend.Text;
-    X.O['input_message_content'] := SO;
-    X.O['input_message_content'].S['@type'] := 'inputMessageText';
-    X.O['input_message_content'].O['text'] := SO;
-    X.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
-    X.O['input_message_content'].O['text'].S['text'] := txtMsgToSend.Text;
+    XO := SO;
+    XO.S['@type'] := 'sendMessage';
+    XO.S['chat_id'] := txtChatIdToSend.Text;
+    XO.O['input_message_content'] := SO;
+    XO.O['input_message_content'].S['@type'] := 'inputMessageText';
+    XO.O['input_message_content'].O['text'] := SO;
+    XO.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
+    XO.O['input_message_content'].O['text'].S['text'] := txtMsgToSend.Text;
 
-    JSonAnsiStr := X.AsJSon;
-
-    memSend.Lines.Add('SENDING : '+X.AsJSon);
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
     memSend.Lines.Add('');
 
-    td_send(JSonAnsiStr);
+    td_send(XO.Cast.ToAnsiString);
+
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button10Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+  if is_closed = 1 then
+    Showmessage('No active service to get!')
+  Else
+  begin
+    XO := SO;
+    XO.S['@type'] := 'getChats';
+    //XO.O['chat_list_'] := SO; //chatListArchive, and chatListMain
+    //XO.O['chat_list_'].S['@type'] := 'chatListMain';
+    XO.F['offset_order_'] := (Power(2, 63) - 1); //This is a big number
+    XO.I['offset_chat_id_'] := 0;
+    XO.I['limit_'] := 10; //Get 10 first messages
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    td_send(XO.Cast.ToAnsiString);
+
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button11Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'getMe';
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+end;
+
+procedure TForm1.Button12Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+  if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+  Begin
+    if is_closed = 1  then
+      Showmessage('No active service to send!')
+    Else
+    begin
+      XO := SO;
+      XO.S['@type'] := 'createPrivateChat';
+      XO.S['user_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+      XO.B['force'] := True;
+
+      memSend.Lines.Add('SENDING : '+XO.Cast.ToAnsiString);
+      memSend.Lines.Add('');
+
+      memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+
+      XO := Nil;
+    end;
+  End
+  Else
+    Showmessage('Select a valid chat id!');
+
+end;
+
+
+
+procedure TForm1.Button13Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'addProxy';
+    XO.S['server'] := txtServer.Text;
+    XO.I['port'] := StrToInt(txtPort.Text);
+    XO.B['enable'] := chbEnable.Checked;
+    XO.O['type'] := SO;
+    XO.O['type'].S['@type'] := cbType.Text;
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button14Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+    XO := SO;
+    XO.S['@type'] := 'getProxies';
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+//**
+end;
+
+procedure TForm1.Button15Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'getProxyLink';
+    XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button16Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'pingProxy';
+    XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+end;
+
+procedure TForm1.Button17Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'removeProxy';
+    XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button18Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+    XO := SO;
+    XO.S['@type'] := 'disableProxy';
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button19Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'enableProxy';
+    XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'getChat';
+    XO.S['chat_id'] := txtChatIdToSend.text;
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button20Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'editProxy';
+    XO.S['server'] := txtServer.Text;
+    XO.I['port'] := StrToInt(txtPort.Text);
+    XO.B['enable'] := chbEnable.Checked;
+    XO.O['type'] := SO;
+    XO.O['type'].S['@type'] := cbType.Text;
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'searchPublicChat';
+    XO.S['username'] := txtNameToSearch.text;
+
+    memSend.Lines.Add('SENDING  : '+XO.Cast.ToAnsiString);
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+
+    XO := Nil;
+  end;
+
+
+end;
+
+procedure TForm1.btnCreatePrivateChatClick(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+    XO := SO;
+    XO.S['@type'] := 'createPrivateChat';
+    XO.S['user_id'] := txtChatIdToSend.text;
+    XO.B['force'] := True;
+
+    memSend.Lines.Add('SENDING : '+XO.Cast.ToAnsiString);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+
+    XO := Nil;
   end;
 
 end;
@@ -534,25 +1074,136 @@ end;
 
 procedure TForm1.Button4Click(Sender: TObject);
 var
- X: ISuperObject;
- JSonAnsiStr: AnsiString;
+ XO: ISuperObject;
 begin
 
   //# setting TDLib log verbosity level to 1 (errors)
-  X := SO;
-  X.S['@type'] := 'setLogVerbosityLevel';
-  X.I['new_verbosity_level'] := 1;
-  X.F['@extra'] := 1.01234;
+  XO := SO;
+  XO.S['@type'] := 'setLogVerbosityLevel';
+  XO.I['new_verbosity_level'] := 1;
+  XO.F['@extra'] := 1.01234;
 
-  //Convert String to AnsiString Type
-  JSonAnsiStr := X.AsJSon;
-
-  memSend.Lines.Add('SENDING : '+JSonAnsiStr);
+  memSend.Lines.Add('SENDING : '+XO.Cast.ToAnsiString);
   memSend.Lines.Add('');
 
-  memReceiver.Lines.Add('RECEIVING : '+td_execute(JSonAnsiStr));
+  memReceiver.Lines.Add('RECEIVING : '+td_execute(XO.Cast.ToAnsiString));
   memReceiver.Lines.Add('');
+  XO := NIl;
+end;
 
+procedure TForm1.Button5Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+    XO := SO;
+    XO.S['@type'] := 'openChat';
+    XO.S['user_id'] := txtChatIdToSend.text;
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := NIl;
+  end;
+
+end;
+
+procedure TForm1.Button6Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+
+  if is_closed = 1  then
+    Showmessage('No active service to get!')
+  Else
+  begin
+    XO := SO;
+    XO.S['@type'] := 'getContacts';
+
+    memSend.Lines.Add('SENDING  : '+XO.Cast.ToAnsiString);
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+
+    XO := NIl;
+  end;
+
+end;
+
+procedure TForm1.Button7Click(Sender: TObject);
+Var
+  XO: ISuperObject;
+begin
+  XO := SO;
+  XO.S['@type'] := 'searchChatsOnServer';
+  XO.S['&query_'] := txtNameToSearch.Text;
+  XO.I['limit_'] := 100;
+
+  memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
+
+  XO := NIl;
+end;
+
+procedure TForm1.Button8Click(Sender: TObject);
+Var
+  XO: ISuperObject;
+begin
+  //#Beta version in test...
+  if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+  Begin
+    XO := SO;
+    XO.S['@type'] := 'createCall';
+    XO.I['user_id'] := StrToInt64(StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]));
+    XO.O['protocol'] := SO;
+    XO.O['protocol'].B['udp_p2p'] := True;
+    XO.O['protocol'].B['udp_reflector'] := True;
+    XO.O['protocol'].I['min_layer'] := 65;
+    XO.O['protocol'].I['max_layer'] := 65;
+
+    memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
+
+    XO := NIl;
+  End
+  Else
+    Showmessage('Select a valid chat id!');
+end;
+
+procedure TForm1.btnsearchChatMessagesClick(Sender: TObject);
+Var
+  XO: ISuperObject;
+begin
+  if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+  Begin
+    memChatMSG.Strings.Clear;
+    XO := SO;
+    XO.S['@type'] := 'searchChatMessages';
+    XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+    XO.S['query'] := '';
+    XO.I['sender_user'] := 0;
+    XO.I['from_message_id'] := 0;
+    XO.I['limit'] := 100;
+    XO.I['offset'] := 0;
+    XO.O['filter'] := SO;
+    XO.O['filter'].S['@type'] := 'searchMessagesFilterEmpty';
+    memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := NIl;
+  End
+  Else
+    Showmessage('Select a valid chat id!');
+
+end;
+
+procedure TForm1.Button9Click(Sender: TObject);
+Var
+  XO: ISuperObject;
+begin
+  XO := SO;
+  XO.S['@type'] := 'getUser';
+  XO.S['user_id_'] := txtChatIdToSend.Text;
+  memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
+  XO := NIl;
 end;
 
 function TForm1.td_execute(JsonUTF8: String): String;
@@ -565,24 +1216,22 @@ End;
 
 procedure TForm1.btnExecuteClick(Sender: TObject);
 var
-  X, Xp: ISuperObject;
-  JSOnAnsiStr: AnsiString;
+  XO : ISuperObject;
 begin
 
-  X := SO;
-  X.S['@type']  := 'getTextEntities';
-  X.S['text']   := '@telegram /test_command https://telegram.org telegram.me';
-  X.A['@extra'] := SA;
-  X.A['@extra'].S[0] := '5';
-  X.A['@extra'].F[1] := 7.0;
+  XO := SO;
+  XO.S['@type']  := 'getTextEntities';
+  XO.S['text']   := '@telegram /test_command https://telegram.org telegram.me';
+  XO.A['@extra'] := SA;
+  XO.A['@extra'].S[0] := '5';
+  XO.A['@extra'].F[1] := 7.0;
 
-  JSOnAnsiStr := X.AsJson;
-
-  memSend.Lines.Add('SENDING... '+JSOnAnsiStr);
+  memSend.Lines.Add('SENDING... '+XO.Cast.ToAnsiString);
   memSend.Lines.Add('');
 
-  memReceiver.Lines.Add('RECEIVING... '+td_execute(JSOnAnsiStr));
+  memReceiver.Lines.Add('RECEIVING... '+td_execute(XO.Cast.ToAnsiString));
   memReceiver.Lines.Add('');
+  XO := Nil;
 end;
 
 function TForm1.td_send(JsonUTF8: String): String;
@@ -595,25 +1244,101 @@ begin
   Result := JsonAnsiStr;
 end;
 
+procedure TForm1.txtMSGKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  XO: ISuperObject;
+begin
+  if Key = VK_RETURN then
+    if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+    Begin
+      if is_closed = 1 then
+        Showmessage('No active service to send!')
+      Else
+      begin
+        XO := SO;
+        XO.S['@type'] := 'sendMessage';
+        XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);;
+        XO.O['input_message_content'] := SO;
+        XO.O['input_message_content'].S['@type'] := 'inputMessageText';
+        XO.O['input_message_content'].O['text'] := SO;
+        XO.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
+        XO.O['input_message_content'].O['text'].S['text'] := txtMsg.Text;
+
+        memSend.Lines.Add('SENDING : '+XO.AsJSon);
+        memSend.Lines.Add('');
+
+        td_send(XO.Cast.ToAnsiString);
+
+        XO := Nil;
+        txtMsg.Text := '';
+      end;
+
+      Key := Ord(#0);
+    End
+    Else
+      Showmessage('Select a valid id!');
+
+end;
+
+procedure TForm1.ViewCttChange(Sender: TObject; Node: TTreeNode);
+Var
+  XO: ISuperObject;
+begin
+  if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID : ') then
+  Begin
+    memChatMSG.Strings.Clear;
+    XO := SO;
+    XO.S['@type'] := 'searchChatMessages';
+    CurrentChatStr := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+    lblCurrentChat.Caption :=  'Current Chat : '+CurrentChatStr;
+    XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+    XO.S['query'] := '';
+    XO.I['sender_user'] := 0;
+    XO.I['from_message_id'] := 0;
+    XO.I['limit'] := 30;
+    XO.I['offset'] := 0;
+    XO.O['filter'] := SO;
+    XO.O['filter'].S['@type'] := 'searchMessagesFilterEmpty';
+    memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := NIl;
+  End;
+end;
+
+procedure TForm1.ViewCttDblClick(Sender: TObject);
+begin
+
+  if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+  Begin
+    PageControl1.TabIndex := 0;
+    txtChatIdToSend.Text := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+  End;
+
+  if (ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('UserName')) and
+  (Length(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text) > 10) then
+  Begin
+    PageControl1.TabIndex := 0;
+    txtNameToSearch.Text := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'UserName : ','',[rfReplaceAll]);
+  End;
+end;
+
 procedure TForm1.btnSendClick(Sender: TObject);
 var
-  X: ISuperObject;
-  JSonAnsiStr: AnsiString;
+  XO: ISuperObject;
 begin
   if is_closed = 1 then
     Showmessage('No active service to send!')
   Else
   begin
-    X := SO;
-    X.S['@type'] := 'getAuthorizationState';
-    X.F['@extra'] := 1.01234;
+    XO := SO;
+    XO.S['@type'] := 'getAuthorizationState';
+    XO.F['@extra'] := 1.01234;
 
-    JSonAnsiStr := X.AsJSon;
-
-    memSend.Lines.Add('SENDING : '+X.AsJSon);
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
     memSend.Lines.Add('');
 
-    td_send(JSonAnsiStr);
+    td_send(XO.Cast.ToAnsiString);
+    XO := Nil;
   end;
 
 end;
@@ -622,7 +1347,19 @@ procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
   if FClient <> 0 then
   Begin
+    if is_Closed = 0 then
+    begin
+      is_closed := 1; //Now the Service is Closed
+    end;
+
+    client_session.Name := '';
+    client_session.ID := 0;
+    client_session.Client := 0;
     client_destroy(FClient);
+    FClient := 0;
+
+    TLOMe := Nil;
+    TLOGetMe := Nil;
   End;
 end;
 
@@ -637,6 +1374,31 @@ begin
 
   lblNomeDLL.Caption := tdjsonDllName;
 
+  with ViewCtt.Items do
+  begin
+    if GroupListTreeNode = Nil then
+      GroupListTreeNode := Add(nil,  'Group List');
+
+    if ContactListTreeNode = Nil then
+      ContactListTreeNode := Add(nil,  'Contacts List');
+  end;
+end;
+
+procedure TForm1.SearchBox1InvokeSearch(Sender: TObject);
+var i:integer;
+begin
+  {Browsing the Items}
+  for i:=0 to ViewCtt.Items.Count-1 do
+    if (ViewCtt.Items.Item[i].Text.Contains(SearchBox1.Text)) then
+    begin
+       // Expanding the desired Node. The False parameter does not
+       // enable recursion (it will not expand whoever is
+       // within the Node located) and True enables recursion,
+       // that way it expands what you've located and all the others
+       // internal nodes to it (obviously only those with children)}}
+      ViewCtt.Items.Item[i].Expand(False);
+    end;
+
 end;
 
 procedure TForm1.btnDestroyClientClick(Sender: TObject);
@@ -645,8 +1407,7 @@ begin
   Begin
     if is_Closed = 0 then
     begin
-      Showmessage('Stop the service first');
-      exit;
+      is_closed := 1; //Now the Service is Closed
     end;
 
     client_session.Name := '';
