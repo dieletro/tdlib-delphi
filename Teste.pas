@@ -23,7 +23,7 @@ uses
 
   //Use JSON with X-SuperObject
   XSuperJSON,
-  XSuperObject, dxGDIPlusClasses, Iglatec.LabelLink, Vcl.WinXCtrls, ChatControl;
+  XSuperObject, Vcl.WinXCtrls, ChatControl;
 
 type
   MyPCharType = PAnsiChar;
@@ -129,10 +129,6 @@ type
     ViewCtt: TTreeView;
     txtNameToSearch: TEdit;
     Label12: TLabel;
-    Image1: TImage;
-    igLabelLink1: TigLabelLink;
-    igLabelLink2: TigLabelLink;
-    igLabelLink3: TigLabelLink;
     SearchBox1: TSearchBox;
     Button9: TButton;
     btnsearchChatMessages: TButton;
