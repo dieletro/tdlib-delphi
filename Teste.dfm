@@ -220,7 +220,6 @@ object Form1: TForm1
         Height = 21
         PasswordChar = #248
         TabOrder = 9
-        Text = '2e608983b702b9b676fb4d54d35b638e'
         TextHint = 'API_HASH'
       end
       object txtAPI_ID: TEdit
@@ -230,7 +229,6 @@ object Form1: TForm1
         Height = 21
         PasswordChar = #248
         TabOrder = 10
-        Text = '1303269'
         TextHint = 'API_ID'
       end
       object txtPhoneNumber: TEdit
@@ -601,7 +599,6 @@ object Form1: TForm1
         Height = 21
         PasswordChar = #248
         TabOrder = 26
-        Text = '1238208131:AAGmGQ8TuGGrlZud3WW142ba1bH6IFlGPVY'
         TextHint = 'Bot Token'
       end
       object cbLoginBot: TCheckBox
@@ -743,8 +740,6 @@ object Form1: TForm1
           ParentDoubleBuffered = False
           ParentFont = False
           TabOrder = 0
-          ExplicitTop = 11
-          ExplicitWidth = 729
         end
         object pTextBox: TPanel
           Left = 0
@@ -754,7 +749,6 @@ object Form1: TForm1
           Align = alTop
           Caption = 'pTextBox'
           TabOrder = 1
-          ExplicitWidth = 729
           object Image1: TImage
             Left = 574
             Top = 1
@@ -812,7 +806,6 @@ object Form1: TForm1
             TextHint = 'Write a message ... and press Enter to send'
             Visible = False
             OnKeyDown = txtMSG2KeyDown
-            ExplicitWidth = 626
           end
           object txtMSG: TEditColoredFont
             AlignWithMargins = True
@@ -842,7 +835,6 @@ object Form1: TForm1
             TabOrder = 1
             TextHint = 'Write a message ... and press Enter to send'
             OnKeyDown = txtMSGKeyDown
-            ExplicitWidth = 623
           end
         end
         object pEmojis: TPanel
