@@ -1,4 +1,4 @@
-///#
+﻿///#
 ///# Copyright Ruan Diego Lacerda Menezes (diegolacerdamenezes@gmail.com) - 2020
 ///#
 ///# Distributed under the Boost Software License, Version 1.0. (See accompanying
@@ -16,18 +16,23 @@ uses
 {$ELSE}
   Wintypes, WinProcs,
 {$ENDIF}
+  Vcl.Direct2D, Winapi.D2D1, //For use a Custor Emojis Colored in TEdit
   Winapi.Messages, System.SysUtils, System.Variants,
   System.Classes, Vcl.Graphics, Vcl.ComCtrls,
   Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls,
   Data.DB, Vcl.OleServer, Vcl.ExtCtrls, ShellAPI, Math,
+  System.Generics.Collections,
 
   //Use JSON with X-SuperObject
   XSuperJSON,
-  XSuperObject, Vcl.WinXCtrls, ChatControl;
+  XSuperObject, Vcl.WinXCtrls, ChatControl, dxGDIPlusClasses,
+  Vcl.BaseImageCollection, Vcl.ImageCollection, Vcl.VirtualImage,
+  TDLib.EditColoredFont;
 
 type
   MyPCharType = PAnsiChar;
   MyPVoid = IntPtr;
+
 
   //Definition of the Session
   TtgSession = record
@@ -39,19 +44,20 @@ type
 var
   //Variable that receives the dll pointer
   tdjsonDll: THandle;
+  MyChat: TChat;
 
 const
   //DLL name associated with the test project
   {$IFDEF MSWINDOWS}
     tdjsonDllName : String =
         {$IFDEF WIN32} 'tdjson.dll' {$ENDIF}
-        {$IFDEF WIN64} 'tdjson-x64.dll' {$ENDIF} {+ SharedSuffix};   //TDLib.dll
+        {$IFDEF WIN64} 'tdjson.dll' {$ENDIF} {+ SharedSuffix};   //TDLib.dll
   {$ELSE}
     tdjsonDllName : String = 'libtdjson.so' {+ SharedSuffix};
   {$ENDIF}
 
   //Setting the Receiver Timeout
-  WAIT_TIMEOUT : double = 1.0; //1 seconds
+  WAIT_TIMEOUT : double = 10.0; //10 seconds
 
 var
   // should be set to 1, when updateAuthorizationState with authorizationStateClosed is received
@@ -69,6 +75,9 @@ var
   //Stores the logged user data
   CurrentChatStr: String = '';
   TLOGetMe, TLOMe  : ISuperObject;
+
+  //Contador Global para o TimeOut
+  MyTimeOut: Double;
 type
 
   //internal delegate void Callback(IntPtr ptr);
@@ -132,7 +141,7 @@ type
     SearchBox1: TSearchBox;
     Button9: TButton;
     btnsearchChatMessages: TButton;
-    txtMSG: TEdit;
+    txtMSG2: TEdit;
     Button7: TButton;
     Button8: TButton;
     Button10: TButton;
@@ -158,6 +167,245 @@ type
     cbType: TComboBox;
     Label14: TLabel;
     chbEnable: TCheckBox;
+    Label15: TLabel;
+    txtToken: TEdit;
+    cbLoginBot: TCheckBox;
+    GroupBox2: TGroupBox;
+    txtSecret: TEdit;
+    txtUserName: TEdit;
+    Label16: TLabel;
+    txtPassword: TEdit;
+    Label17: TLabel;
+    cbHttpOnly: TCheckBox;
+    btnTestProxy: TButton;
+    cbUseDCTest: TCheckBox;
+    btnClear: TButton;
+    TimerOut: TTimer;
+    lblTimer: TLabel;
+    Image1: TImage;
+    Image2: TImage;
+    Image3: TImage;
+    pConversa: TPanel;
+    pTextBox: TPanel;
+    pEmojis: TPanel;
+    pClasses: TPanel;
+    pTipo: TPanel;
+    pButton2Gifs: TPanel;
+    pIndicadorGIFS: TPanel;
+    Label18: TLabel;
+    pButton1Stickers: TPanel;
+    Label19: TLabel;
+    pIndicadorSTICKERS: TPanel;
+    pButton0Emojis: TPanel;
+    Label20: TLabel;
+    pIndicadorEMOJIS: TPanel;
+    pEmojisView: TPanel;
+    ScrollBox1: TScrollBox;
+    pRecentes: TPanel;
+    Label21: TLabel;
+    EmojisCollection: TImageCollection;
+    OpenDlg: TOpenDialog;
+    Panel2: TPanel;
+    Panel3: TPanel;
+    Edit1: TEdit;
+    pGifsView: TPanel;
+    pStickersView: TPanel;
+    VirtualImage1: TVirtualImage;
+    VirtualImage2: TVirtualImage;
+    VirtualImage3: TVirtualImage;
+    VirtualImage4: TVirtualImage;
+    VirtualImage5: TVirtualImage;
+    VirtualImage6: TVirtualImage;
+    VirtualImage7: TVirtualImage;
+    VirtualImage8: TVirtualImage;
+    VirtualImage9: TVirtualImage;
+    VirtualImage10: TVirtualImage;
+    VirtualImage11: TVirtualImage;
+    VirtualImage12: TVirtualImage;
+    VirtualImage13: TVirtualImage;
+    VirtualImage14: TVirtualImage;
+    VirtualImage22: TVirtualImage;
+    VirtualImage23: TVirtualImage;
+    VirtualImage24: TVirtualImage;
+    VirtualImage25: TVirtualImage;
+    VirtualImage26: TVirtualImage;
+    VirtualImage27: TVirtualImage;
+    VirtualImage28: TVirtualImage;
+    VirtualImage29: TVirtualImage;
+    VirtualImage30: TVirtualImage;
+    VirtualImage31: TVirtualImage;
+    VirtualImage32: TVirtualImage;
+    VirtualImage33: TVirtualImage;
+    VirtualImage34: TVirtualImage;
+    VirtualImage35: TVirtualImage;
+    ScrollBox2: TScrollBox;
+    lblStickersName: TLabel;
+    Panel1: TPanel;
+    VirtualImage16: TVirtualImage;
+    VirtualImage17: TVirtualImage;
+    VirtualImage18: TVirtualImage;
+    VirtualImage19: TVirtualImage;
+    VirtualImage20: TVirtualImage;
+    VirtualImage37: TVirtualImage;
+    VirtualImage38: TVirtualImage;
+    VirtualImage39: TVirtualImage;
+    VirtualImage40: TVirtualImage;
+    VirtualImage41: TVirtualImage;
+    VirtualImage44: TVirtualImage;
+    VirtualImage45: TVirtualImage;
+    VirtualImage46: TVirtualImage;
+    VirtualImage47: TVirtualImage;
+    VirtualImage48: TVirtualImage;
+    VirtualImage51: TVirtualImage;
+    VirtualImage52: TVirtualImage;
+    VirtualImage53: TVirtualImage;
+    VirtualImage54: TVirtualImage;
+    VirtualImage55: TVirtualImage;
+    StickersCollection: TImageCollection;
+    ScrollBox3: TScrollBox;
+    Image13: TImage;
+    pBuscaStikers: TPanel;
+    pPackStikers: TPanel;
+    ScrollBox4: TScrollBox;
+    Panel4: TPanel;
+    VirtualImage36: TVirtualImage;
+    GifsCollection: TImageCollection;
+    Animate1: TAnimate;
+    IconCollection: TImageCollection;
+    VirtualImage15: TVirtualImage;
+    VirtualImage21: TVirtualImage;
+    VirtualImage42: TVirtualImage;
+    VirtualImage43: TVirtualImage;
+    VirtualImage49: TVirtualImage;
+    VirtualImage50: TVirtualImage;
+    VirtualImage56: TVirtualImage;
+    VirtualImage57: TVirtualImage;
+    VirtualImage58: TVirtualImage;
+    VirtualImage59: TVirtualImage;
+    VirtualImage60: TVirtualImage;
+    VirtualImage62: TVirtualImage;
+    VirtualImage61: TVirtualImage;
+    VirtualImage63: TVirtualImage;
+    VirtualImage64: TVirtualImage;
+    VirtualImage65: TVirtualImage;
+    VirtualImage66: TVirtualImage;
+    VirtualImage67: TVirtualImage;
+    VirtualImage68: TVirtualImage;
+    VirtualImage69: TVirtualImage;
+    VirtualImage70: TVirtualImage;
+    VirtualImage71: TVirtualImage;
+    VirtualImage72: TVirtualImage;
+    VirtualImage73: TVirtualImage;
+    VirtualImage74: TVirtualImage;
+    VirtualImage75: TVirtualImage;
+    VirtualImage76: TVirtualImage;
+    VirtualImage77: TVirtualImage;
+    VirtualImage78: TVirtualImage;
+    VirtualImage79: TVirtualImage;
+    VirtualImage80: TVirtualImage;
+    VirtualImage81: TVirtualImage;
+    VirtualImage82: TVirtualImage;
+    VirtualImage83: TVirtualImage;
+    VirtualImage84: TVirtualImage;
+    VirtualImage85: TVirtualImage;
+    VirtualImage86: TVirtualImage;
+    VirtualImage87: TVirtualImage;
+    VirtualImage88: TVirtualImage;
+    VirtualImage89: TVirtualImage;
+    VirtualImage90: TVirtualImage;
+    txtMSG: TEditColoredFont;
+    VirtualImage91: TVirtualImage;
+    VirtualImage92: TVirtualImage;
+    VirtualImage93: TVirtualImage;
+    VirtualImage94: TVirtualImage;
+    VirtualImage95: TVirtualImage;
+    VirtualImage96: TVirtualImage;
+    VirtualImage97: TVirtualImage;
+    VirtualImage98: TVirtualImage;
+    VirtualImage99: TVirtualImage;
+    VirtualImage100: TVirtualImage;
+    VirtualImage101: TVirtualImage;
+    VirtualImage102: TVirtualImage;
+    VirtualImage103: TVirtualImage;
+    VirtualImage104: TVirtualImage;
+    VirtualImage105: TVirtualImage;
+    VirtualImage106: TVirtualImage;
+    VirtualImage107: TVirtualImage;
+    VirtualImage108: TVirtualImage;
+    VirtualImage109: TVirtualImage;
+    VirtualImage110: TVirtualImage;
+    VirtualImage111: TVirtualImage;
+    VirtualImage112: TVirtualImage;
+    VirtualImage113: TVirtualImage;
+    VirtualImage114: TVirtualImage;
+    VirtualImage115: TVirtualImage;
+    VirtualImage116: TVirtualImage;
+    VirtualImage117: TVirtualImage;
+    VirtualImage118: TVirtualImage;
+    VirtualImage119: TVirtualImage;
+    VirtualImage120: TVirtualImage;
+    VirtualImage121: TVirtualImage;
+    VirtualImage122: TVirtualImage;
+    VirtualImage123: TVirtualImage;
+    VirtualImage124: TVirtualImage;
+    VirtualImage125: TVirtualImage;
+    VirtualImage126: TVirtualImage;
+    VirtualImage127: TVirtualImage;
+    VirtualImage128: TVirtualImage;
+    VirtualImage129: TVirtualImage;
+    VirtualImage130: TVirtualImage;
+    VirtualImage131: TVirtualImage;
+    VirtualImage132: TVirtualImage;
+    VirtualImage133: TVirtualImage;
+    VirtualImage134: TVirtualImage;
+    VirtualImage135: TVirtualImage;
+    VirtualImage136: TVirtualImage;
+    VirtualImage137: TVirtualImage;
+    VirtualImage138: TVirtualImage;
+    VirtualImage139: TVirtualImage;
+    VirtualImage140: TVirtualImage;
+    VirtualImage141: TVirtualImage;
+    VirtualImage142: TVirtualImage;
+    VirtualImage143: TVirtualImage;
+    VirtualImage144: TVirtualImage;
+    VirtualImage145: TVirtualImage;
+    VirtualImage146: TVirtualImage;
+    Label22: TLabel;
+    VirtualImage147: TVirtualImage;
+    VirtualImage148: TVirtualImage;
+    VirtualImage149: TVirtualImage;
+    VirtualImage150: TVirtualImage;
+    VirtualImage151: TVirtualImage;
+    VirtualImage152: TVirtualImage;
+    VirtualImage153: TVirtualImage;
+    VirtualImage154: TVirtualImage;
+    VirtualImage155: TVirtualImage;
+    VirtualImage156: TVirtualImage;
+    VirtualImage157: TVirtualImage;
+    VirtualImage158: TVirtualImage;
+    VirtualImage159: TVirtualImage;
+    VirtualImage160: TVirtualImage;
+    VirtualImage161: TVirtualImage;
+    VirtualImage162: TVirtualImage;
+    VirtualImage163: TVirtualImage;
+    VirtualImage164: TVirtualImage;
+    VirtualImage165: TVirtualImage;
+    VirtualImage166: TVirtualImage;
+    VirtualImage167: TVirtualImage;
+    VirtualImage168: TVirtualImage;
+    VirtualImage169: TVirtualImage;
+    VirtualImage170: TVirtualImage;
+    VirtualImage171: TVirtualImage;
+    VirtualImage172: TVirtualImage;
+    VirtualImage173: TVirtualImage;
+    VirtualImage174: TVirtualImage;
+    VirtualImage175: TVirtualImage;
+    VirtualImage176: TVirtualImage;
+    VirtualImage177: TVirtualImage;
+    VirtualImage178: TVirtualImage;
+    VirtualImage179: TVirtualImage;
+    VirtualImage180: TVirtualImage;
+    VirtualImage181: TVirtualImage;
     procedure btnInitClick(Sender: TObject);
     procedure btnCuscaClick(Sender: TObject);
     procedure btnCreateClick(Sender: TObject);
@@ -180,11 +428,10 @@ type
     procedure ViewCttDblClick(Sender: TObject);
     procedure SearchBox1InvokeSearch(Sender: TObject);
     procedure btnsearchChatMessagesClick(Sender: TObject);
-    procedure ViewCttChange(Sender: TObject; Node: TTreeNode);
     procedure Button7Click(Sender: TObject);
     procedure Button8Click(Sender: TObject);
     procedure Button10Click(Sender: TObject);
-    procedure txtMSGKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure txtMSG2KeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure Button11Click(Sender: TObject);
     procedure Button12Click(Sender: TObject);
     procedure Button13Click(Sender: TObject);
@@ -195,10 +442,27 @@ type
     procedure Button18Click(Sender: TObject);
     procedure Button19Click(Sender: TObject);
     procedure Button20Click(Sender: TObject);
+    procedure btnTestProxyClick(Sender: TObject);
+    procedure cbTypeChange(Sender: TObject);
+    procedure btnClearClick(Sender: TObject);
+    procedure ViewCttClick(Sender: TObject);
+    procedure TimerOutTimer(Sender: TObject);
+    procedure Label20Click(Sender: TObject);
+    procedure Label19Click(Sender: TObject);
+    procedure Label18Click(Sender: TObject);
+    procedure Image2Click(Sender: TObject);
+    procedure Image1MouseEnter(Sender: TObject);
+    procedure Image1Click(Sender: TObject);
+    procedure pEmojisMouseLeave(Sender: TObject);
+    procedure Image1MouseLeave(Sender: TObject);
+    procedure IMGClick(Sender: TObject);
+    procedure StikersClick(Sender: TObject);
+    procedure txtMSGKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
   private
     function td_execute(JsonUTF8: String): String;
     function td_send(JsonUTF8: String): String;
     function td_receive: String;
+    procedure ShowColorEmojis(AEdit: TEdit);
     { Private declarations }
   public
     { Public declarations }
@@ -301,10 +565,9 @@ end;
 
 function TForm1.td_receive(): String;
 var
-  ReturnStr :  String;
+  ReturnStr, MSG :  String;
   JsonAnsiStr: AnsiString;
-  I: Integer;
-  J, CTInt: Integer;
+  I, J, CTInt: Integer;
 
   XO, XOParam, TLOAuthState,
   TLOEvent, TLOUpdateMessage,
@@ -316,7 +579,7 @@ var
 
 begin
 
-  {$REGION 'IMPLEMENTATION'}
+{$REGION 'IMPLEMENTATION'}
   ReturnStr := client_receive(FClient, WAIT_TIMEOUT);
 
   TLOEvent := SO(ReturnStr);
@@ -348,7 +611,7 @@ begin
         XO.S['@type'] := 'setTdlibParameters';
         XO.O['parameters'] := SO;
         XOParam := XO.O['parameters'];
-          XOParam.B['use_test_dc'] := False;
+          XOParam.B['use_test_dc'] := cbUseDCTest.Checked;
           XOParam.S['database_directory'] := 'tdlib';
           XOParam.S['files_directory'] := 'myfiles';
           XOParam.B['use_file_database'] := True;
@@ -363,6 +626,13 @@ begin
           JsonAnsiStr := '';
           JsonAnsiStr := txtAPI_HASH.Text;
           XOParam.S['api_hash'] := JsonAnsiStr;
+
+          if cbLoginBot.Checked then
+          Begin
+            JsonAnsiStr := '';
+            JsonAnsiStr := txtToken.Text;
+            XOParam.S['token'] := JsonAnsiStr;
+          End;
 
           XOParam.S['system_language_code'] := 'pt';
           XOParam.S['device_model'] := 'TInjectTDLibTelegram';
@@ -467,15 +737,58 @@ begin
     if TLOEvent.S['@type'] = 'error' then
     Begin
       //if an error is found, stop the process
-      if is_Closed = 0 then  //Restart Service
-      Begin
-         is_Closed := 1;
-         is_Closed := 0;
-      End;
+      MSG := 'An error was found: '+ #10#13;
 
-      Showmessage('An error was found:'+ #10#13 +
-                  'code : ' + TLOEvent.S['code'] + #10#13 +
-                  'message : '+TLOEvent.S['message']);
+      if TLOEvent.S['message'] = 'PHONE_NUMBER_INVALID' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'PASSWORD_HASH_INVALID' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'PHONE_CODE_INVALID' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'AUTH_KEY_DUPLICATED' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'Supergroup members are unavailable' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'Chat not found' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'setAuthenticationPhoneNumber unexpected' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'] = 'Already logging out' then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if (TLOEvent.S['message'] = 'Timeout expired') or
+        (TLOEvent.S['message'] = 'Pong timeout expired') then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if (TLOEvent.I['code'] = 401) or (TLOEvent.S['message'] = 'Unauthorized') then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if (TLOEvent.I['code'] = 429) or (TLOEvent.I['code'] = 420) then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'].startswith('Failed to connect to') then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+//      if TLOEvent.S['message'] in ['Connection closed', 'Failed to connect', 'Connection timeout expired'] then
+      if (TLOEvent.S['message'] = 'Connection closed') or
+         (TLOEvent.S['message'] =  'Failed to connect')or
+         (TLOEvent.S['message'] = 'Connection timeout expired') then
+          raise Exception.Create(MSG+TLOEvent.S['message']);
+
+      if TLOEvent.S['message'].startswith('Read from fd') and
+        TLOEvent.S['message'].endswith('has failed') then // # I know regex he he
+         // # https://github.com/tdlib/td/issues/476
+          raise Exception.Create(MSG+TLOEvent.S['message'])
+      else
+        raise Exception.Create(MSG+'Unknown error!');
+
     end;
     {$ENDREGION 'error'}
 
@@ -488,15 +801,18 @@ begin
         Begin
           TLOGetMe := SO;
           TLOGetMe.S['@type'] := 'getMe';
+
           memSend.Lines.Add(td_send(TLOGetMe.Cast.ToAnsiString));
           memReceiver.Lines.Add(TLOGetMe.Cast.ToAnsiString);
+
+          //is_closed := 1; //Finish the service!
         End;
       End;
 
 
     if TLOEvent.S['@type'] = 'user' then  //updateUser
     Begin
-      TLOMe := TLOEvent.AsObject;
+      TLOMe := SO(TLOEvent.AsJSON);
     End;
 
     {$ENDREGION 'getMe'}
@@ -594,63 +910,89 @@ begin
       if TLOContent.S['@type'] = 'messageText' then
       Begin
         TLOText := TLOContent.O['text'];
+
         if CurrentChatStr = TLOUpdateMessage.I['chat_id'].ToString then
         Begin
+          MyChat := Nil;
+          MyChat := TChat.Create; //instancia uma nova mensagem
+          MyChat.UserName := TLOUpdateMessage.I['sender_user_id'].ToString;
+          MyChat.Hora := FormatDateTime('HH:MM',Time);
+
           if TLOMe.I['id'].ToString = TLOUpdateMessage.I['sender_user_id'].ToString then
-            memChatMSG.Say(User2, TLOUpdateMessage.I['sender_user_id'].ToString, TLOText.S['text'])
+            MyChat.User := User2
           else
-            memChatMSG.Say(User1, TLOUpdateMessage.I['sender_user_id'].ToString, TLOText.S['text']);
+            MyChat.User := User1;
+
+          MyChat.MessageID := Random(128);
+          MyChat.ChatID := TLOUpdateMessage.I['chat_id'];
+          MyChat.Message := TLOText.S['text'];
+          memChatMSG.Say(MyChat, ctRegularGroup);
         End;
       End;
 
     end;
     {$ENDREGION 'updateNewMessage'}
 
-    {$REGION 'searchChatMessage'}
-    if TLOEvent.S['@type'] = 'messages' then  //updateUser
+    {$REGION 'searchChatMessages'}
+    //Handling New incoming messages  {"total_count":100,"@type":"messages","messages":
+    if TLOEvent.S['@type'] = 'messages' then
     Begin
-//      TLAMessages := Nil;
-//      TLOContent  := Nil;
-//      TLOText := Nil;
-      for I := TLOEvent.I['total_count'] - 1 Downto 0 do
-      Begin
-        TLAMessages := TLOEvent.A['messages'];
-        TLOContent := TLAMessages.O[I];
-        TLOText := TLOContent.O['content'].O['text'];
+      TLAMessages := Nil;
+      TLAMessages := TLOEvent.A['messages'];
 
-        if TLOText.S['text'] <> '' then
+      for I := TLOEvent.I['total_count'] downto 0  do
+      Begin
+
+        TLOContent := Nil;
+        TLOContent :=  TLAMessages.O[I].O['content'];
+
+        //If it's a text message
+        if TLOContent.S['@type'] = 'messageText' then
         Begin
-          if CurrentChatStr = TLOContent.I['chat_id'].ToString then
+          TLOText := Nil;
+          TLOText := TLOContent.O['text'];
+
+          if CurrentChatStr = TLAMessages.O[I].I['chat_id'].ToString then
           Begin
-            if TLOMe.I['id'].ToString = TLOContent.I['sender_user_id'].ToString then
-              memChatMSG.Say(User2, TLOContent.I['sender_user_id'].ToString, TLOText.S['text'])
+
+            MyChat := Nil;
+            MyChat := TChat.Create; //instancia uma nova mensagem
+            MyChat.UserName := TLAMessages.O[I].I['sender_user_id'].ToString;
+            MyChat.Hora := FormatDateTime('HH:MM',Time);
+            if TLOMe.I['id'].ToString = TLAMessages.O[I].I['sender_user_id'].ToString then
+              MyChat.User := User2
             else
-              memChatMSG.Say(User1, TLOContent.I['sender_user_id'].ToString, TLOText.S['text']);
+              MyChat.User := User1;
+            MyChat.MessageID := Random(128);
+            MyChat.ChatID := TLAMessages.O[I].I['chat_id'];
+            MyChat.Message := TLOText.S['text'];
+
+            memChatMSG.Say(MyChat, ctRegularGroup);
           End;
         End;
-      End;
 
-
-    End;
-    {$ENDREGION 'searchChatMessage'}
+      end;
+    end;
+    {$ENDREGION 'searchChatMessages'}
 
     //# handle an incoming update or an answer to a previously sent request
     if TLOEvent.AsJSON() <> '{}' then
       Result := 'RECEIVING : '+ TLOEvent.AsJSON;
 
-  End;
+    XO := NIl;
+    XOParam := NIl;
+    TLOAuthState := NIl;
+    TLOEvent := NIl;
+    TLOUpdateMessage := NIl;
+    TLOContent := NIl;
+    TLOText := NIl;
+    TLOUsers := NIl;
+    TLAContacts := NIl;
+    ContactTreeNode := NIl;
 
-  XO := NIl;
-  XOParam := NIl;
-  TLOAuthState := NIl;
-  TLOEvent := NIl;
-  TLOUpdateMessage := NIl;
-  TLOContent := NIl;
-  TLOText := NIl;
-  TLOUsers := NIl;
-  TLAContacts := NIl;
-  ContactTreeNode := NIl;
-  {$ENDREGION 'IMPLEMENTATION'}
+  End;
+{$ENDREGION 'IMPLEMENTATION'}
+
 End;
 
 procedure TForm1.btnStartClick(Sender: TObject);
@@ -698,28 +1040,18 @@ procedure TForm1.btnSendMessageClick(Sender: TObject);
 var
   XO: ISuperObject;
 begin
-  if is_closed = 1 then
-    Showmessage('No active service to send!')
-  Else
-  begin
-    //ChatID from the TInjectTelegram Group for you to use and test
-    //-1001387521713
-    XO := SO;
-    XO.S['@type'] := 'sendMessage';
-    XO.S['chat_id'] := txtChatIdToSend.Text;
-    XO.O['input_message_content'] := SO;
-    XO.O['input_message_content'].S['@type'] := 'inputMessageText';
-    XO.O['input_message_content'].O['text'] := SO;
-    XO.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
-    XO.O['input_message_content'].O['text'].S['text'] := txtMsgToSend.Text;
 
-    memSend.Lines.Add('SENDING : '+XO.AsJSon);
-    memSend.Lines.Add('');
+  XO := Nil;
+  XO := SO;
+  XO.S['@type'] := 'sendMessage';
+  XO.S['chat_id'] := txtChatIdToSend.Text;
+  XO.O['input_message_content'] := SO;
+  XO.O['input_message_content'].S['@type'] := 'inputMessageText';
+  XO.O['input_message_content'].O['text'] := SO;
+  XO.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
+  XO.O['input_message_content'].O['text'].S['text'] := txtMsgToSend.Text;
 
-    td_send(XO.Cast.ToAnsiString);
-
-    XO := Nil;
-  end;
+  td_send(XO.Cast.ToAnsiString);
 
 end;
 
@@ -727,24 +1059,25 @@ procedure TForm1.Button10Click(Sender: TObject);
 var
   XO: ISuperObject;
 begin
+
+
   if is_closed = 1 then
     Showmessage('No active service to get!')
   Else
   begin
+    XO := Nil;
     XO := SO;
     XO.S['@type'] := 'getChats';
-    //XO.O['chat_list_'] := SO; //chatListArchive, and chatListMain
-    //XO.O['chat_list_'].S['@type'] := 'chatListMain';
-    XO.F['offset_order_'] := (Power(2, 63) - 1); //This is a big number
-    XO.I['offset_chat_id_'] := 0;
-    XO.I['limit_'] := 10; //Get 10 first messages
+//    XO.O['chat_list'] := SO; //chatListArchive, and chatListMain
+//    XO.O['chat_list'].S['@type'] := 'chatListMain';
+    XO.I['offset_order'] := Trunc(Power(2, 63) - 1); //This is a big number 9223372036854775807;//
+    XO.I['offset_chat_id'] := 0;
+    XO.I['limit'] := 100; //Get 10 first messages  //page_size
 
     memSend.Lines.Add('SENDING : '+XO.AsJSon);
     memSend.Lines.Add('');
 
     td_send(XO.Cast.ToAnsiString);
-
-    XO := Nil;
   end;
 
 end;
@@ -758,7 +1091,6 @@ begin
     Showmessage('No active service to send!')
   Else
   begin
-
     XO := SO;
     XO.S['@type'] := 'getMe';
 
@@ -792,6 +1124,7 @@ begin
 
       XO := Nil;
     end;
+
   End
   Else
     Showmessage('Select a valid chat id!');
@@ -817,6 +1150,25 @@ begin
     XO.B['enable'] := chbEnable.Checked;
     XO.O['type'] := SO;
     XO.O['type'].S['@type'] := cbType.Text;
+
+    if cbType.Text = 'proxyTypeMtproto' then
+    Begin
+      if txtSecret.Text <> '' then
+        XO.O['type'].S['secret'] := txtSecret.Text
+      else
+        Begin
+          Showmessage('Enter the value of MTProto secret!');
+          Exit;
+        End;
+    End
+    Else
+      Begin
+        XO.O['type'].S['username'] := txtUserName.Text;
+        XO.O['type'].S['password'] := txtPassword.Text;
+
+        if cbType.Text = 'proxyTypeHttp' then
+          XO.O['type'].B['http_only'] := cbHttpOnly.Checked;
+      End;
 
     memSend.Lines.Add('SENDING : '+XO.AsJSon);
     memSend.Lines.Add('');
@@ -845,7 +1197,7 @@ begin
     memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
     XO := Nil;
   end;
-//**
+
 end;
 
 procedure TForm1.Button15Click(Sender: TObject);
@@ -891,6 +1243,7 @@ begin
     memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
     XO := Nil;
   end;
+
 end;
 
 procedure TForm1.Button17Click(Sender: TObject);
@@ -949,7 +1302,8 @@ begin
 
     XO := SO;
     XO.S['@type'] := 'enableProxy';
-    XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
+    if txtProxyID.Text <> '' then
+      XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
 
     memSend.Lines.Add('SENDING : '+XO.AsJSon);
     memSend.Lines.Add('');
@@ -957,6 +1311,7 @@ begin
     memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
     XO := Nil;
   end;
+
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -994,17 +1349,88 @@ begin
 
     XO := SO;
     XO.S['@type'] := 'editProxy';
+    XO.I['proxy_id'] := StrToInt(txtProxyID.Text);
     XO.S['server'] := txtServer.Text;
     XO.I['port'] := StrToInt(txtPort.Text);
     XO.B['enable'] := chbEnable.Checked;
     XO.O['type'] := SO;
     XO.O['type'].S['@type'] := cbType.Text;
 
+    if cbType.Text = 'proxyTypeMtproto' then
+    Begin
+      XO.O['type'].S['secret'] := txtSecret.Text;
+    End
+    Else
+      Begin
+        XO.O['type'].S['username'] := txtUserName.Text;
+        XO.O['type'].S['password'] := txtPassword.Text;
+
+        if cbType.Text = 'proxyTypeHttp' then
+          XO.O['type'].B['http_only'] := cbHttpOnly.Checked;
+      End;
+
     memSend.Lines.Add('SENDING : '+XO.AsJSon);
     memSend.Lines.Add('');
 
     memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
     XO := Nil;
+  end;
+
+end;
+
+procedure TForm1.btnClearClick(Sender: TObject);
+begin
+//*ClearProxyConfig
+  txtUserName.Text := '';
+  txtPassword.Text := '';
+  txtServer.Text := '';
+  txtSecret.Text := '';
+  txtPort.Text := '';
+end;
+
+procedure TForm1.btnTestProxyClick(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+  if is_closed = 1  then
+    Showmessage('No active service to send!')
+  Else
+  begin
+
+    XO := SO;
+    XO.S['@type'] := 'testProxy';
+    XO.S['server'] := txtServer.Text;
+    XO.I['port'] := StrToInt(txtPort.Text);
+    XO.I['dc_id'] := 0;
+    XO.F['timeout'] := 10.0;
+    XO.O['type'] := SO;
+    XO.O['type'].S['@type'] := cbType.Text;
+
+    if cbType.Text = 'proxyTypeMtproto' then
+    Begin
+      if txtSecret.Text <> '' then
+        XO.O['type'].S['secret'] := txtSecret.Text
+      else
+        Begin
+          Showmessage('Enter the value of MTProto secret!');
+          Exit;
+        End;
+    End
+    Else
+      Begin
+        XO.O['type'].S['username'] := txtUserName.Text;
+        XO.O['type'].S['password'] := txtPassword.Text;
+
+        if cbType.Text = 'proxyTypeHttp' then
+          XO.O['type'].B['http_only'] := cbHttpOnly.Checked;
+      End;
+
+    memSend.Lines.Add('SENDING : '+XO.AsJSon);
+    memSend.Lines.Add('');
+
+    memReceiver.Lines.Add(td_send(XO.Cast.ToAnsiString));
+    XO := Nil;
+
   end;
 
 end;
@@ -1029,7 +1455,6 @@ begin
 
     XO := Nil;
   end;
-
 
 end;
 
@@ -1085,6 +1510,7 @@ begin
   memReceiver.Lines.Add('RECEIVING : '+td_execute(XO.Cast.ToAnsiString));
   memReceiver.Lines.Add('');
   XO := NIl;
+
 end;
 
 procedure TForm1.Button5Click(Sender: TObject);
@@ -1132,6 +1558,7 @@ procedure TForm1.Button7Click(Sender: TObject);
 Var
   XO: ISuperObject;
 begin
+  XO := NIl;
   XO := SO;
   XO.S['@type'] := 'searchChatsOnServer';
   XO.S['&query_'] := txtNameToSearch.Text;
@@ -1139,7 +1566,6 @@ begin
 
   memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
 
-  XO := NIl;
 end;
 
 procedure TForm1.Button8Click(Sender: TObject);
@@ -1159,7 +1585,6 @@ begin
     XO.O['protocol'].I['max_layer'] := 65;
 
     memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
-
     XO := NIl;
   End
   Else
@@ -1183,6 +1608,7 @@ begin
     XO.I['offset'] := 0;
     XO.O['filter'] := SO;
     XO.O['filter'].S['@type'] := 'searchMessagesFilterEmpty';
+
     memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
     XO := NIl;
   End
@@ -1195,11 +1621,47 @@ procedure TForm1.Button9Click(Sender: TObject);
 Var
   XO: ISuperObject;
 begin
+  XO := NIl;
   XO := SO;
   XO.S['@type'] := 'getUser';
   XO.S['user_id_'] := txtChatIdToSend.Text;
   memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
-  XO := NIl;
+end;
+
+procedure TForm1.cbTypeChange(Sender: TObject);
+begin
+  //Samples Proxy Config
+  case cbType.ItemIndex of
+    0:
+    Begin //proxyTypeHttp
+      if txtServer.Text = '' then
+        txtServer.Text := '119.93.235.205';
+
+      if txtPort.Text = '' then
+        txtPort.Text := '80';
+    End;
+
+    1:
+    Begin //proxyTypeMtproto
+      if txtServer.Text = '' then
+        txtServer.Text := '65.52.166.119';
+
+      if txtPort.Text = '' then
+        txtPort.Text := '443';
+
+      if txtSecret.Text = '' then
+        txtSecret.Text := 'eef0c0e5aee000330514b3ed796d4012ff617a7572652e6d6963726f736f66742e636f6d';
+    End;
+
+    2:
+    Begin //proxyTypeSocks5   98.190.102.62:4145
+      if txtServer.Text = '' then
+        txtServer.Text := '204.101.61.82';
+
+      if txtPort.Text = '' then
+        txtPort.Text := '4145';
+    End;
+  end;
 end;
 
 function TForm1.td_execute(JsonUTF8: String): String;
@@ -1240,6 +1702,55 @@ begin
   Result := JsonAnsiStr;
 end;
 
+procedure TForm1.TimerOutTimer(Sender: TObject);
+begin
+  MyTimeOut := MyTimeOut + 0.1;
+
+  if MyTimeOut > WAIT_TIMEOUT then
+  Begin
+    MyTimeOut := 0.0;
+    TimerOut.Enabled := False;
+  End;
+
+  lblTimer.Caption := MyTimeOut.ToString; //View Only
+end;
+
+procedure TForm1.txtMSG2KeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  XO: ISuperObject;
+begin
+  if Key = VK_RETURN then
+    if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+    Begin
+      if is_closed = 1 then
+        Showmessage('No active service to send!')
+      Else
+      begin
+        XO := SO;
+        XO.S['@type'] := 'sendMessage';
+        XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+        XO.O['input_message_content'] := SO;
+        XO.O['input_message_content'].S['@type'] := 'inputMessageText';
+        XO.O['input_message_content'].O['text'] := SO;
+        XO.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
+        XO.O['input_message_content'].O['text'].S['text'] := txtMsg.Text;
+
+        memSend.Lines.Add('SENDING : '+XO.AsJSon);
+        memSend.Lines.Add('');
+
+        td_send(XO.Cast.ToAnsiString);
+        XO := Nil;
+        txtMsg.Text := '';
+      end;
+
+      Key := Ord(#0);
+    End
+    Else
+      Showmessage('Select a valid id!');
+
+end;
+
 procedure TForm1.txtMSGKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
@@ -1254,7 +1765,7 @@ begin
       begin
         XO := SO;
         XO.S['@type'] := 'sendMessage';
-        XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);;
+        XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
         XO.O['input_message_content'] := SO;
         XO.O['input_message_content'].S['@type'] := 'inputMessageText';
         XO.O['input_message_content'].O['text'] := SO;
@@ -1265,7 +1776,6 @@ begin
         memSend.Lines.Add('');
 
         td_send(XO.Cast.ToAnsiString);
-
         XO := Nil;
         txtMsg.Text := '';
       end;
@@ -1277,7 +1787,7 @@ begin
 
 end;
 
-procedure TForm1.ViewCttChange(Sender: TObject; Node: TTreeNode);
+procedure TForm1.ViewCttClick(Sender: TObject);
 Var
   XO: ISuperObject;
 begin
@@ -1288,17 +1798,18 @@ begin
     XO.S['@type'] := 'searchChatMessages';
     CurrentChatStr := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
     lblCurrentChat.Caption :=  'Current Chat : '+CurrentChatStr;
-    XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+    XO.S['chat_id'] := CurrentChatStr;
     XO.S['query'] := '';
     XO.I['sender_user'] := 0;
     XO.I['from_message_id'] := 0;
-    XO.I['limit'] := 30;
+    XO.I['limit'] := 100;
     XO.I['offset'] := 0;
     XO.O['filter'] := SO;
     XO.O['filter'].S['@type'] := 'searchMessagesFilterEmpty';
     memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
     XO := NIl;
   End;
+
 end;
 
 procedure TForm1.ViewCttDblClick(Sender: TObject);
@@ -1318,25 +1829,19 @@ begin
   End;
 end;
 
+procedure TForm1.StikersClick(Sender: TObject);
+begin
+//*SendStickers capturando o Stream da Imagem do Sender
+
+end;
+
 procedure TForm1.btnSendClick(Sender: TObject);
 var
   XO: ISuperObject;
 begin
-  if is_closed = 1 then
-    Showmessage('No active service to send!')
-  Else
-  begin
-    XO := SO;
-    XO.S['@type'] := 'getAuthorizationState';
-    XO.F['@extra'] := 1.01234;
-
-    memSend.Lines.Add('SENDING : '+XO.AsJSon);
-    memSend.Lines.Add('');
-
-    td_send(XO.Cast.ToAnsiString);
-    XO := Nil;
-  end;
-
+  XO := SO;
+  XO.S['@type'] := 'getAuthorizationState';
+  memSend.Lines.Add(td_send(XO.Cast.ToAnsiString));
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -1378,6 +1883,159 @@ begin
     if ContactListTreeNode = Nil then
       ContactListTreeNode := Add(nil,  'Contacts List');
   end;
+end;
+
+procedure TForm1.ShowColorEmojis(AEdit: TEdit);
+const
+  //str: string = 'xyz👨🏼‍🎤👩🏾‍👩🏼‍👧🏻‍👦🏿';
+  D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT = 4;
+var
+  c: TDirect2DCanvas;
+  r: D2D_RECT_F;
+begin
+  if Assigned(AEdit) then
+  Begin
+    c := TDirect2DCanvas.Create(Canvas.Handle, Rect(0, 0, 100, 100));
+    c.BeginDraw;
+    try
+
+      r.left := 0;
+      r.top := 0;
+      r.right := 100;
+      r.bottom := 50;
+
+      // Brush determines the font color.
+      c.Brush.Color := clBlack;
+
+      c.RenderTarget.DrawText(
+        PWideChar(AEdit.Text), Length(AEdit.Text), c.Font.Handle, r, c.Brush.Handle,
+        D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+    finally
+      c.EndDraw;
+      c.Free;
+    end;
+  End;
+
+End;
+
+procedure TForm1.Image1Click(Sender: TObject);
+begin
+  pEmojis.Visible := True;
+end;
+
+procedure TForm1.Image1MouseEnter(Sender: TObject);
+begin
+  pEmojis.Visible := True;
+end;
+
+procedure TForm1.Image1MouseLeave(Sender: TObject);
+begin
+  if Sender is TPanel then
+    if (Sender as TPanel).Name = 'pEmojis'  then
+      pEmojis.Visible := False;
+end;
+
+procedure TForm1.Image2Click(Sender: TObject);
+var
+  XO: ISuperObject;
+begin
+  if OpenDlg.Execute then
+  Begin
+//    for I := 0 to OpenDlg.Files.Count - 1 do
+//    Begin
+//
+//    End;
+
+    if ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text.Contains('ID') then
+    Begin
+      if is_closed = 1 then
+        Showmessage('No active service to send!')
+      Else
+      begin
+        XO := SO;
+        //Sends messages grouped together into an album.
+        //Currently only photo and video messages can be grouped into an album. Returns sent messages.
+        XO.S['@type'] := 'sendMessageAlbum';
+        //Target chat.
+        XO.S['chat_id'] := StringReplace(ViewCtt.Items.Item[ViewCtt.Selected.AbsoluteIndex].Text,'ID : ','',[rfReplaceAll]);
+        //Identifier of a message to reply to or 0.
+        XO.I['reply_to_message_id'] := 0;
+        //Options to be used to send the messages.
+        XO.O['options'] := SO;
+        //Pass true to disable notification for the message.
+        //Must be false if the message is sent to a secret chat.
+        XO.O['options'].B['disable_notification'] := False;
+        //Pass true if the message is sent from the background.
+        XO.O['options'].B['from_background'] := False;
+        //Contents of messages to be sent.
+        XO.O['input_message_content'] := SO;
+        XO.O['input_message_content'].S['@type'] := 'inputMessagePhoto';
+        XO.O['input_message_content'].O['photo'] := SO;
+        XO.O['input_message_content'].O['text'].S['@type'] := 'formattedText';
+        XO.O['input_message_content'].O['text'].S['text'] := txtMsg.Text;
+
+        memSend.Lines.Add('SENDING : '+XO.AsJSon);
+        memSend.Lines.Add('');
+
+        td_send(XO.Cast.ToAnsiString);
+        XO := Nil;
+        txtMsg.Text := '';
+      end;
+
+      //Key := Ord(#0);
+    End
+    Else
+      Showmessage('Select a valid id!');
+
+
+  End;
+
+end;
+
+procedure TForm1.IMGClick(Sender: TObject);
+begin
+//*
+  txtMSG.Text := txtMSG.Text + (Sender as TVirtualImage).ImageName;
+ // ShowColorEmojis(txtMSG);
+end;
+
+procedure TForm1.Label18Click(Sender: TObject);
+begin
+  pIndicadorEMOJIS.Color := clBtnFace;
+  pIndicadorSTICKERS.Color := clBtnFace;
+  pIndicadorGIFS.Color := clHighlight;
+  pGifsView.Visible := True;
+  pGifsView.BringToFront;
+  pEmojisView.Visible := False;
+  pStickersView.Visible := False;
+end;
+
+procedure TForm1.Label19Click(Sender: TObject);
+begin
+  pIndicadorEMOJIS.Color := clBtnFace;
+  pIndicadorSTICKERS.Color := clHighlight;
+  pStickersView.Visible := True;
+  pStickersView.BringToFront;
+  pEmojisView.Visible := False;
+  pGifsView.Visible := False;
+  pIndicadorGIFS.Color := clBtnFace;
+end;
+
+procedure TForm1.Label20Click(Sender: TObject);
+begin
+  pIndicadorEMOJIS.Color := clHighlight;
+  pEmojisView.Visible := True;
+  pEmojisView.BringToFront;
+  pStickersView.Visible := False;
+  pGifsView.Visible := False;
+  pIndicadorSTICKERS.Color := clBtnFace;
+  pIndicadorGIFS.Color := clBtnFace;
+end;
+
+procedure TForm1.pEmojisMouseLeave(Sender: TObject);
+begin
+//  if (Sender as TPanel).Parent.Name = 'pEmojis' then
+    pEmojis.Visible := False;
 end;
 
 procedure TForm1.SearchBox1InvokeSearch(Sender: TObject);

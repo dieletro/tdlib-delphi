@@ -2,6 +2,10 @@ program testando;
 
 
 
+
+
+{$R *.dres}
+
 uses
   Vcl.Forms,
   Teste in 'Teste.pas' {Form1},
