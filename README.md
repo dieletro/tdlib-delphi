@@ -322,10 +322,10 @@ begin
       else
 
       if TLOEvent.S['message'].startswith('Read from fd') and
-        TLOEvent.S['message'].endswith('has failed') then // # I know regex he he
+         TLOEvent.S['message'].endswith('has failed') then // # I know regex he he
           Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
       else
-        raise Exception.Create(MSG+'Unknown error!');
+        Application.MessageBox(PChar(MSG+'Unknown error!'), Pchar('Error'), MB_OK+MB_ICONERROR);
 
       Exit;
     end;
