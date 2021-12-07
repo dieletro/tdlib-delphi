@@ -252,6 +252,84 @@ begin
     {$IFDEF DEBUG}
       SDebug := TLEvent.AsJSON;
     {$ENDIF}
+    
+ 
+    //Error
+    {$REGION 'error'}
+    if TLOEvent.S['@type'] = 'error' then
+    Begin
+      //if an error is found, stop the process
+      MSG := 'An error was found: '+ #10#13;
+
+      if TLOEvent.S['message'] = 'PHONE_NUMBER_INVALID' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'PASSWORD_HASH_INVALID' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'PHONE_CODE_INVALID' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'AUTH_KEY_DUPLICATED' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'Supergroup members are unavailable' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'Chat not found' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'setAuthenticationPhoneNumber unexpected' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'] = 'Already logging out' then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if (TLOEvent.S['message'] = 'Timeout expired') or
+        (TLOEvent.S['message'] = 'Pong timeout expired') then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if (TLOEvent.I['code'] = 400) or (TLOEvent.S['message'] = 'Invalid user identifier') then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if (TLOEvent.I['code'] = 401) or (TLOEvent.S['message'] = 'Unauthorized') then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if (TLOEvent.I['code'] = 429) or (TLOEvent.I['code'] = 420) then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'].startswith('Failed to connect to') then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+//      if TLOEvent.S['message'] in ['Connection closed', 'Failed to connect', 'Connection timeout expired'] then
+      if (TLOEvent.S['message'] = 'Connection closed') or
+         (TLOEvent.S['message'] =  'Failed to connect')or
+         (TLOEvent.S['message'] = 'Connection timeout expired') then
+        Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+
+      if TLOEvent.S['message'].startswith('Read from fd') and
+        TLOEvent.S['message'].endswith('has failed') then // # I know regex he he
+          Application.MessageBox(PChar(MSG+TLOEvent.S['message']), Pchar('Error'), MB_OK+MB_ICONERROR)
+      else
+        raise Exception.Create(MSG+'Unknown error!');
+
+      Exit;
+    end;
+    {$ENDREGION 'error'}
 
     //# process authorization states
     if TLEvent.S['@type'] = 'updateAuthorizationState' then
@@ -394,19 +472,6 @@ begin
       End;
 
     End;
-
-    if TLEvent.S['@type'] = 'error' then
-    Begin
-      //if an error is found, stop the process
-      if is_Closed = 0 then
-         is_Closed := 1
-      else
-          is_Closed := 0;
-
-      Showmessage('An error was found:'+ #10#13 +
-                  'code : ' + TLEvent.S['code'] + #10#13 +
-                  'message : '+TLEvent.S['message']);
-    end;
 
     //Handling New incoming messages  
     if TLEvent.S['@type'] = 'updateNewMessage' then  
